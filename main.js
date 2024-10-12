@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';
 
 // Neccesary for display: scene, camera, renderer
-
 const scene = new THREE.Scene();
 
 // Camera display settings
@@ -21,8 +20,8 @@ const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
-camera.position.z = 3;
-
+camera.position.set(0, 2, 2); 
+camera.lookAt(0, 0, 0);
 
 // function animate() {
 
@@ -45,30 +44,36 @@ if ( WebGL.isWebGL2Available() ) {
 
 }
 
+const anim = (t) => {
+	TWEEN.update(t);
+	requestAnimationFrame(anim);
+};
+
 document.addEventListener('keydown', (event) => {
 	const keyName = event.key;
-	const rotationSpeed = -0.5;
+
 	switch (keyName) {
 		case ';': 
-			cubeRotate('y', -1);
-			break;
-		case 'a':
 			cubeRotate('y', 1);
 			break;
+		case 'a':
+			cubeRotate('y', -1);
+			break;
 		case 'y':
-			cubeRotate('x', 1);
+			cubeRotate('x', -1);
 			break;
 		case 'b':
-			cubeRotate('x', -1);
+			cubeRotate('x', 1);
 			break;
 	}
 });
 
 const cubeRotate = (dimension, direction) => {
 
+	
 	let currRotate = 0;
 	const maxRotate = Math.PI / 2;
-	const rotationSpeed = 0.2 * direction;
+	const rotationSpeed = Math.PI / 8 * direction;
 
 	const timer = setInterval(() => {
 		currRotate += rotationSpeed;
@@ -77,5 +82,5 @@ const cubeRotate = (dimension, direction) => {
 		if (Math.abs(currRotate) >= maxRotate) {
 			clearInterval(timer);
 		}
-	}, 100);
+	}, 50);
 }
