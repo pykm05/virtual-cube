@@ -18,36 +18,30 @@ document.body.appendChild( renderer.domElement );
 const geometry = new THREE.BoxGeometry( 1, 1, 1 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+// scene.add( cube );
 
-camera.position.set(0, 2, 2); 
-camera.lookAt(0, 0, 0);
+// x: left & right
+// y: up & down
+// z: forward & back 
+camera.position.set(0, 3, 4); 
+camera.lookAt(0, 1, 0);
 
 // function animate() {
 
-// 	cube.rotation.x += 0.01;
+// 	cube.position.set(1, 0, 0);
+// 	// Rotate the pivot object
 // 	cube.rotation.y += 0.01;
-
 // 	renderer.render( scene, camera );
 // }
 
 // Device and browser compatibility check for WebGL 2
 if ( WebGL.isWebGL2Available() ) {
-
 	// Initiate function or other initializations here
 	renderer.render(scene, camera);
-
 } else {
-
 	const warning = WebGL.getWebGL2ErrorMessage();
 	console.log(warning);
-
 }
-
-const anim = (t) => {
-	TWEEN.update(t);
-	requestAnimationFrame(anim);
-};
 
 document.addEventListener('keydown', (event) => {
 	const keyName = event.key;
@@ -68,19 +62,44 @@ document.addEventListener('keydown', (event) => {
 	}
 });
 
+const U_Layer = new THREE.Group();
 const cubeRotate = (dimension, direction) => {
-
-	
 	let currRotate = 0;
 	const maxRotate = Math.PI / 2;
 	const rotationSpeed = Math.PI / 8 * direction;
 
 	const timer = setInterval(() => {
 		currRotate += rotationSpeed;
-		cube.rotation[dimension] += rotationSpeed;
+		U_Layer.rotation[dimension] += rotationSpeed;
 		renderer.render(scene, camera);
 		if (Math.abs(currRotate) >= maxRotate) {
 			clearInterval(timer);
 		}
 	}, 50);
 }
+
+function createCube() {
+	U_Layer.add(Piece(-1, 0, -1));
+	U_Layer.add(Piece(0, 0, 0));
+	U_Layer.add(Piece(0, 0, -1));
+	U_Layer.add(Piece(1, 0, -1));
+	U_Layer.add(Piece(-1, 0, 0));
+	U_Layer.add(Piece(1, 0, 0));
+	U_Layer.add(Piece(-1, 0, 1));
+	U_Layer.add(Piece(0, 0, 1));
+	U_Layer.add(Piece(1, 0, 1));
+
+	scene.add(U_Layer);
+	renderer.render(scene, camera);
+}
+
+function Piece(x, y, z) {
+	const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+	const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+	const cubes = new THREE.Mesh( geometry, material );
+
+	cubes.position.set(x, y, z);
+	return cubes;
+}
+
+createCube();
