@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';
+import { Cube } from './cube.js';
 
 // Neccesary for display: scene, camera, renderer
 const scene = new THREE.Scene();
@@ -17,7 +18,6 @@ document.body.appendChild( renderer.domElement );
 
 const geometry = new THREE.BoxGeometry( 1, 1, 1 );
 const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
 // scene.add( cube );
 
 // x: left & right
@@ -25,14 +25,6 @@ const cube = new THREE.Mesh( geometry, material );
 // z: forward & back 
 camera.position.set(0, 3, 4); 
 camera.lookAt(0, 1, 0);
-
-// function animate() {
-
-// 	cube.position.set(1, 0, 0);
-// 	// Rotate the pivot object
-// 	cube.rotation.y += 0.01;
-// 	renderer.render( scene, camera );
-// }
 
 // Device and browser compatibility check for WebGL 2
 if ( WebGL.isWebGL2Available() ) {
@@ -42,6 +34,14 @@ if ( WebGL.isWebGL2Available() ) {
 	const warning = WebGL.getWebGL2ErrorMessage();
 	console.log(warning);
 }
+
+const myCube = new Cube();
+
+// listen for keyboard input and make turns
+for (const group of myCube.groups) {
+		scene.add(group);
+}
+renderer.render(scene, camera);
 
 document.addEventListener('keydown', (event) => {
 	const keyName = event.key;
@@ -59,47 +59,34 @@ document.addEventListener('keydown', (event) => {
 		case 'b':
 			cubeRotate('x', 1);
 			break;
+		case 'h':
+			cubeRotate('z', 1);
 	}
+		
 });
 
-const U_Layer = new THREE.Group();
 const cubeRotate = (dimension, direction) => {
+	// rotate 90*
 	let currRotate = 0;
 	const maxRotate = Math.PI / 2;
 	const rotationSpeed = Math.PI / 8 * direction;
 
+	if (dimension == 'z') {
+		myCube.F_Layer.children.forEach(child => {
+				child.material.color.set(0x3330ff);
+			
+		});
+		
+	}
+	// animate cube rotation
 	const timer = setInterval(() => {
 		currRotate += rotationSpeed;
-		U_Layer.rotation[dimension] += rotationSpeed;
+		myCube.U_Layer.rotation[dimension] += rotationSpeed;
 		renderer.render(scene, camera);
 		if (Math.abs(currRotate) >= maxRotate) {
 			clearInterval(timer);
 		}
 	}, 50);
-}
 
-function createCube() {
-	U_Layer.add(Piece(-1, 0, -1));
-	U_Layer.add(Piece(0, 0, 0));
-	U_Layer.add(Piece(0, 0, -1));
-	U_Layer.add(Piece(1, 0, -1));
-	U_Layer.add(Piece(-1, 0, 0));
-	U_Layer.add(Piece(1, 0, 0));
-	U_Layer.add(Piece(-1, 0, 1));
-	U_Layer.add(Piece(0, 0, 1));
-	U_Layer.add(Piece(1, 0, 1));
-
-	scene.add(U_Layer);
 	renderer.render(scene, camera);
-}
-
-function Piece(x, y, z) {
-	const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-	const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-	const cubes = new THREE.Mesh( geometry, material );
-
-	cubes.position.set(x, y, z);
-	return cubes;
-}
-
-createCube();
+} 
