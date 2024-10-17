@@ -38,8 +38,12 @@ if ( WebGL.isWebGL2Available() ) {
 const myCube = new Cube();
 
 // listen for keyboard input and make turns
+for (const piece of myCube.pieces) {
+	scene.add(piece);
+}
+
 for (const group of myCube.groups) {
-		scene.add(group);
+	scene.add(group);
 }
 renderer.render(scene, camera);
 
@@ -60,10 +64,54 @@ document.addEventListener('keydown', (event) => {
 			cubeRotate('x', 1);
 			break;
 		case 'h':
-			cubeRotate('z', 1);
+			turn('F', 1);
+			break;
 	}
 		
 });
+
+// const turn = (dimension, direction) => {
+// 	// rotate 90*
+// 	let currRotate = 0;
+// 	const maxRotate = Math.PI / 2;
+// 	const rotationSpeed = Math.PI / 8 * direction;
+// 	let currLayer = myCube.U_Layer;
+// 	let val = 1;
+// 	if (dimension == 'F') {
+// 		currLayer = myCube.F_Layer;
+// 	} 
+// 	else if (dimension == 'y') {
+// 		currLayer = myCube.U_Layer;
+// 		val = 0;
+// 	}
+// 	for (const piece of myCube.pieces) {
+// 		if (piece.position[dimension] == val) {
+// 			currLayer.add(piece);
+// 			console.log('hi');
+// 		}
+// 	}
+// 	console.log(myCube.F_Layer.children);
+	
+
+// 	if (dimension == 'z') {
+// 		myCube.F_Layer.children.forEach(child => {
+// 				child.material.color.set(0x3330ff);
+			
+// 		});
+		
+// 	}
+// 	// animate cube rotation
+// 	const timer = setInterval(() => {
+// 		currRotate += rotationSpeed;
+// 		currLayer.rotation[dimension] += rotationSpeed;
+// 		renderer.render(scene, camera);
+// 		if (Math.abs(currRotate) >= maxRotate) {
+// 			clearInterval(timer);
+// 		}
+// 	}, 50);
+
+// 	renderer.render(scene, camera);
+// } 
 
 const cubeRotate = (dimension, direction) => {
 	// rotate 90*
@@ -71,17 +119,14 @@ const cubeRotate = (dimension, direction) => {
 	const maxRotate = Math.PI / 2;
 	const rotationSpeed = Math.PI / 8 * direction;
 
-	if (dimension == 'z') {
-		myCube.F_Layer.children.forEach(child => {
-				child.material.color.set(0x3330ff);
-			
-		});
-		
+	for (const piece of myCube.pieces) {
+		myCube.Full_Cube.add(piece);
 	}
+
 	// animate cube rotation
 	const timer = setInterval(() => {
 		currRotate += rotationSpeed;
-		myCube.U_Layer.rotation[dimension] += rotationSpeed;
+		myCube.Full_Cube.rotation[dimension] += rotationSpeed;
 		renderer.render(scene, camera);
 		if (Math.abs(currRotate) >= maxRotate) {
 			clearInterval(timer);
