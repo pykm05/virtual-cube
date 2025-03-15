@@ -1,31 +1,13 @@
-import { cube } from './cube.js';
+import { Cube } from './cube.js';
 
-// x: right and left
-// y: up and down
-// z: forward and backward
+let cube = new Cube();
 
-scene.add( cube );
-console.log(cube)
-camera.position.y = 3;
-camera.position.z = 5;
+scene.add(cube.pieces);
 
-camera.lookAt(new THREE.Vector3(0, 0, 0));
-// Reusable vector for world position
-const worldPosition = new THREE.Vector3();
+window.addEventListener('keydown', (e) => {
+    if (cube.notRotating) {
+        cube.rotate(e.key);
+    }
+});
 
-function animate() {
-    // Rotate the cube
-    cube.rotation.y += 0.04;
-
-    // Update world matrix
-    cube.updateMatrixWorld(true);
-
-    // Loop through all the children and get their world positions
-    cube.children.forEach((child, index) => {
-        child.getWorldPosition(worldPosition);
-        console.log(`World position of child ${index}:`, worldPosition);
-    });
-
-    // Render the scene
-    renderer.render(scene, camera);
-}
+renderer.render(scene, camera);
