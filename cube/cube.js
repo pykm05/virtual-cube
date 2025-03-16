@@ -4,12 +4,13 @@ class Cube {
     // y: up and down
     // z: forward and backward
 
-    pieces;
-    notRotating;
+    pieces = [];
+    notRotating = true;
+    turnSpeed = Math.PI / 30;
+    targetGroup = new THREE.Group();
 
     constructor() {
-        this.pieces = new THREE.Group();
-        this.notRotating = true
+        scene.add(this.targetGroup);
 
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j <= 1; j++) {
@@ -19,34 +20,30 @@ class Cube {
                     const piece = new THREE.Mesh(geometry, material);
 
                     piece.position.set(i, j, k)
-                    this.pieces.add(piece);
+                    this.pieces.push(piece);
                 }
             }
         }
     }
 
-    rotate(key) {
-        let factor = 1;
-        let targetRotation = this.pieces.rotation.y + Math.PI / 2;
-        let turnSpeed = Math.PI / 30;
+    // perform x, y, and z moves
+    rotate(axis, direction) {
+        this.targetGroup.remove(...this.targetGroup.children);
+        this.pieces.forEach((piece) => { this.targetGroup.add(piece) });
 
-        if (key == ';') factor = -1;
-        else factor = 1;
-        targetRotation = this.pieces.rotation.y + Math.PI / 2 * factor;
-        this.notRotating = false;
+        const targetRotation = this.targetGroup.rotation[axis] + Math.PI / 2 * direction;
 
         renderer.setAnimationLoop(() => {
-            this.pieces.rotation.y += turnSpeed * factor;
+            this.targetGroup.rotation[axis] += this.turnSpeed * direction;
 
-            if (this.pieces.rotation.y >= targetRotation && factor == 1 ||
-                this.pieces.rotation.y <= targetRotation && factor == -1
+            if (this.targetGroup.rotation[axis] >= targetRotation && direction == 1 ||
+                this.targetGroup.rotation[axis] <= targetRotation && direction == -1
             ) {
-                this.pieces.rotation.y = targetRotation; // Prevent over-rotation
+                this.targetGroup.rotation[axis] = targetRotation; // Prevent over-rotation
                 renderer.setAnimationLoop(null);
-                this.notRotating = true;
             }
 
-            this.pieces.updateMatrixWorld(true);
+            this.targetGroup.updateMatrixWorld(true);
             renderer.render(scene, camera);
         });
     }
