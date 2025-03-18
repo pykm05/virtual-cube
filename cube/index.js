@@ -2,28 +2,24 @@ import { Cube } from './cube.js';
 
 let cube = new Cube();
 
-let piecesAsGroup = new THREE.Group();
-
-cube.pieces.forEach((piece) => {
-    piecesAsGroup.add(piece)
-})
-
-scene.add(piecesAsGroup);
+scene.add(cube.pieces);
 
 window.addEventListener('keydown', (e) => {
     switch (e.key) {
         case 'a': // y
-            cube.rotate("y", 1);
+            cube.rotate('y', 1);
             break;
         case ';': // y'
-            cube.rotate("y", -1);
+            cube.rotate('y', -1);
             break;
         case 'y': // x
-            cube.rotate("x", 1);
+            cube.rotate('x', -1);
             break;
         case 'b': // x'
-            cube.rotate("x", -1);
+            cube.rotate('x', 1);
             break;
+        case 'j': // U
+            cube.turn('U', 1);
         default:
             // z moves???
             break;
