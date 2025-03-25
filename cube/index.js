@@ -2,7 +2,13 @@ import { Cube } from './cube.js';
 
 let cube = new Cube();
 
-scene.add(cube.pieces);
+let pieces = new THREE.Group();
+
+cube.allPieces.forEach((e) => {
+    pieces.add(e)
+})
+
+scene.add(pieces);
 
 window.addEventListener('keydown', (e) => {
     switch (e.key) {
@@ -19,7 +25,11 @@ window.addEventListener('keydown', (e) => {
             cube.rotate('x', 1);
             break;
         case 'j': // U
-            cube.turn('U', 1);
+            cube.turn('y');
+            break;
+        case 'k': // U
+            cube.turn('x');
+            break;
         default:
             // z moves???
             break;
