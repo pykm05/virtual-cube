@@ -2,14 +2,6 @@ import { Cube } from './cube.js';
 
 let cube = new Cube();
 
-let pieces = new THREE.Group();
-
-cube.allPieces.forEach((e) => {
-    pieces.add(e)
-})
-
-scene.add(pieces);
-
 window.addEventListener('keydown', (e) => {
     switch (e.key) {
         case 'a': // y
@@ -25,10 +17,16 @@ window.addEventListener('keydown', (e) => {
             cube.rotate('x', 1);
             break;
         case 'j': // U
-            cube.turn('y');
+            cube.turn('y', -1);
             break;
-        case 'k': // U
-            cube.turn('x');
+        case 'f': // U'
+            cube.turn('y', 1);
+            break;
+        case 'i': // R
+            cube.turn('x', -1);
+            break;
+        case 'k': // R'
+            cube.turn('x', 1);
             break;
         default:
             // z moves???
@@ -37,13 +35,5 @@ window.addEventListener('keydown', (e) => {
 });
 
 // moveQueue = [];
-
-// turn(key) {
-
-// }
-
-// manageQueue() {
-
-// }
 
 renderer.render(scene, camera);
