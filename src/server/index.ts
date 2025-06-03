@@ -42,7 +42,7 @@ io.on("connection", (socket: Socket) => {
             return;
         };
 
-        io.to(room.roomID).emit("keyboard input", socketID, key);
+        room.handleInput(socketID, key)
     })
 
     socket.on("user joined", () => {
@@ -50,8 +50,6 @@ io.on("connection", (socket: Socket) => {
             io.to(socket.id).emit("invalid join");
             return;
         };
-
-        room.addPlayer(socket);
 
         // debugging
         for (const room of Rooms) {
@@ -62,6 +60,8 @@ io.on("connection", (socket: Socket) => {
                 }
             }
         }
+
+        room.addPlayer(socket);
     })
 
     socket.on("remove player", (socketID: string) => {
@@ -84,6 +84,7 @@ function findRoom(room: Room) {
     if (!room) {
         room = new Room(genRanHex(5), io);
         Rooms.push(room);
+        console.log("room could not be found")
     }
 
     return room;

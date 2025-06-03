@@ -3,6 +3,7 @@ import { useEffect} from "react";
 import { getSocket } from "@/socket";
 import { useRouter } from "next/navigation";
 import Game from "@/components/Game";
+import GameHeader from "@/components/GameHeader";
 
 export default function PlayerWindow() {
 
@@ -19,7 +20,8 @@ export default function PlayerWindow() {
   }, []);
 
   return (
-    <div className="flex justify-center items-center border-2 border-green-700 w-screen h-screen">
+    <div className="flex flex-col border-2 border-red-800 w-screen h-screen">
+      <GameHeader />
       <Game />
     </div>
   );

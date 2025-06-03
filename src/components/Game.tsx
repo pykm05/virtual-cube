@@ -2,15 +2,16 @@
 import { useEffect } from "react";
 import { getSocket } from "@/socket";
 import gameInstance from "@/game/gameInstance";
+import { Player } from "@/server/player";
 
 export default function Game() {
 
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on("start game", (socketIdOne: string, socketIdTwo: string) => {
-      gameInstance(document.getElementById("playerScene")!, socket.id == socketIdOne ? socketIdOne : socketIdTwo);
-      gameInstance(document.getElementById("opponentScene")!, socket.id == socketIdOne ? socketIdTwo : socketIdOne);
+    socket.on("start game", (player: Player, otherPlayer: Player) => {
+      gameInstance(document.getElementById("playerScene")!, socket.id == player.id ? player.id : otherPlayer.id);
+      gameInstance(document.getElementById("opponentScene")!, socket.id == player.id ? otherPlayer.id : player.id);
     })
   }, []);
 
