@@ -28,6 +28,10 @@ export default function Game() {
       setRoomState(RoomState.SOLVE_IN_PROGRESS);
     })
 
+    socket.on("game complete", () => {
+      setRoomState(RoomState.GAME_ENDED);
+    })
+
     
   }, []);
 
@@ -46,7 +50,7 @@ export default function Game() {
   return (
     <div className="flex flex-col items-center w-full border-2 border-red-500 p-5 bg-purple-800 text-white">
       <div>{roomState}</div>
-      <div>{roomState == RoomState.INSPECTION_TIME ? timeRemaining : null}</div>
+      <div>{roomState == RoomState.INSPECTION_TIME || roomState == RoomState.SOLVE_IN_PROGRESS ? timeRemaining : null}</div>
     </div>
   );
 }

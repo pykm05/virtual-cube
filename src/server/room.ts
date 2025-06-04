@@ -13,6 +13,8 @@ class Room {
     public roomID: string;
     public players: Player[] = [];
     private inspectionTime = 15;
+    private solveTime: number = 0;
+    private solveTimeLimit: number = 50; // 300
     private io: Server;
     private roomStatus = RoomState.GAME_NOT_STARTED;
 
@@ -26,7 +28,7 @@ class Room {
             socket.to(socket.id).emit("invalid join");
         } else {
             socket.join(this.roomID);
-            this.players.push({ id: socket.id, status: RoomState.GAME_NOT_STARTED });
+            this.players.push({ id: socket.id, status: RoomState.GAME_NOT_STARTED, solveTime: 0 });
             this.updateGameStatus();
         }
     }
@@ -39,7 +41,7 @@ class Room {
     handleInput(socketID: string, key: string) {
         this.io.to(this.roomID).emit("keyboard input", socketID, key);
 
-        if (this.roomStatus == RoomState.INSPECTION_TIME) {
+        if (this.players[this.findPlayerIndex(socketID)].status == RoomState.INSPECTION_TIME) {
             if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
                 this.io.to(socketID).emit("solve in progress");
                 this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
@@ -55,60 +57,75 @@ class Room {
             case RoomState.GAME_NOT_STARTED:
                 if (this.players.length == 2) {
                     this.io.to(this.roomID).emit("start game", this.players[0], this.players[1]);
-                    this.updateAllStatuses(RoomState.INSPECTION_TIME);
+                    this.roomStatus = RoomState.INSPECTION_TIME;
+
+                    for (const player of this.players) {
+                        player.status = RoomState.INSPECTION_TIME;
+                    }
+
                     this.updateGameStatus();
                 }
                 break;
-            case RoomState.INSPECTION_TIME: // async
+            case RoomState.INSPECTION_TIME:
                 this.io.to(this.roomID).emit("start inspection", RoomState.INSPECTION_TIME);
 
                 const inspectionTimer = setInterval(() => {
                     this.inspectionTime--;
-                    this.io.to(this.roomID).emit("timer update", this.inspectionTime);
+
+                    for (const player of this.players) {
+                        if (player.status == RoomState.INSPECTION_TIME) this.io.to(player.id).emit("timer update", this.inspectionTime);
+                    }
     
                     if (this.inspectionTime == 0 || !this.players.some(player => player.status == RoomState.INSPECTION_TIME)) {
-                        clearTimeout(inspectionTimer);
-                        
                         for (const player of this.players) {
-                            if (player.status == RoomState.INSPECTION_TIME) this.io.to(this.roomID).emit("solve in progress", RoomState.SOLVE_IN_PROGRESS);
+                            if (player.status == RoomState.INSPECTION_TIME) {
+                                this.io.to(player.id).emit("solve in progress");
+                                player.status = RoomState.SOLVE_IN_PROGRESS;
+                            }
                         }
 
                         if (this.roomStatus == RoomState.INSPECTION_TIME) {
                             this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                             this.updateGameStatus();
                         }
+
+                        clearTimeout(inspectionTimer);
                     }
                   }, 1000);
                 break;
-            case RoomState.SOLVE_IN_PROGRESS: // async
+            case RoomState.SOLVE_IN_PROGRESS:
                 const solveTimer = setInterval(() => {
-                    this.inspectionTime--;
-                    this.io.to(this.roomID).emit("timer update", this.inspectionTime);
+                    this.solveTime += 0.01;
+                    
+                    for (const player of this.players) {
+                        if (player.status == RoomState.SOLVE_IN_PROGRESS) {
+                            player.solveTime += 0.01;
+                            this.io.to(player.id).emit("timer update", player.solveTime.toFixed(2));
+                        }
+                    }
 
-                    if (this.inspectionTime == 0 || !this.players.some(player => player.status == RoomState.INSPECTION_TIME)) {
+                    if (this.solveTime >= this.solveTimeLimit || !this.players.some(player => player.status == RoomState.SOLVE_IN_PROGRESS)) {
                         for (const player of this.players) {
-                            if (player.status == RoomState.INSPECTION_TIME) this.io.to(this.roomID).emit("solve in progress", RoomState.SOLVE_IN_PROGRESS);
+                            if (player.status == RoomState.SOLVE_IN_PROGRESS) {
+                                this.io.to(player.id).emit("game complete");
+                                player.status = RoomState.GAME_ENDED;
+                            }
                         }
 
-                        if (this.roomStatus == RoomState.INSPECTION_TIME) this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+                        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
+                            this.roomStatus = RoomState.GAME_ENDED;
+                            this.updateGameStatus();
+                        }
+
                         clearTimeout(solveTimer);
-                        this.updateGameStatus();
                     }
                 }, 10);
-                    break;
+                break;
             case RoomState.GAME_ENDED:
-                this.io.to(this.roomID).emit("next state", RoomState.GAME_ENDED);
+                this.io.to(this.roomID).emit("game complete", RoomState.GAME_ENDED);
                 break;
             default:
                 break;
-        }
-    }
-
-    private updateAllStatuses(newState: RoomState) {
-        this.roomStatus = newState;
-
-        for (const player of this.players) {
-            player.status = newState;
         }
     }
 
