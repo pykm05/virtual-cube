@@ -30,8 +30,10 @@ const Rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
     let room: Room;
+    let username: string;
 
-    socket.on("join room", () => {
+    socket.on("join room", (input: string) => {
+        username = input;
         room = findRoom(room);
         io.to(socket.id).emit("join room", room.roomID);
     });
@@ -61,7 +63,7 @@ io.on("connection", (socket: Socket) => {
             }
         }
 
-        room.addPlayer(socket);
+        room.addPlayer(socket, username);
     })
 
     socket.on("remove player", (socketID: string) => {
@@ -78,7 +80,7 @@ const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.r
 
 function findRoom(room: Room) {
     for (const curr of Rooms) {
-        if (curr.players.length == 1) room = curr;
+        if (curr.players.length <= curr.getMaxPlayerCount() - 1) room = curr;
     }
 
     if (!room) {

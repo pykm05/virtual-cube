@@ -1,8 +1,8 @@
-import { getSocket } from "@/socket";
-import { Cube } from "./cube/cube";
-import Scene from "./cube/scene";
+import { getSocket } from "@/lib/socket";
+import { Cube } from "../components/three/cube";
+import Scene from "../components/three/scene";
 
-export default function gameInstance(container: HTMLElement, socketID: string) {
+export default function newScene(container: HTMLElement, socketID: string) {
   if (container.hasChildNodes()) return;
 
   const { scene, renderer, camera } = Scene(container);

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from "./cubeTypes";
+import { EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from "../../types/cubeTypes";
 
 enum CubeState {
     NOT_MOVING = "Not moving",

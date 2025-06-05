@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import { Player } from "./player";
+import { Player } from "@/types/player";
 
 enum RoomState {
     GAME_NOT_STARTED = "Game not started",
@@ -14,6 +14,7 @@ class Room {
     public players: Player[] = [];
     private inspectionTime = 15;
     private solveTime: number = 0;
+    private maxPlayerCount = 2;
     private solveTimeLimit: number = 50; // 300
     private io: Server;
     private roomStatus = RoomState.GAME_NOT_STARTED;
@@ -23,12 +24,16 @@ class Room {
         this.roomID = roomID;
     }
 
-    addPlayer(socket: Socket) {
-        if (this.players.length >= 2 || this.findPlayerIndex(socket.id) != -1) {
+    getMaxPlayerCount() {
+        return this.maxPlayerCount;
+    }
+
+    addPlayer(socket: Socket, username: string) {
+        if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
             socket.to(socket.id).emit("invalid join");
         } else {
             socket.join(this.roomID);
-            this.players.push({ id: socket.id, status: RoomState.GAME_NOT_STARTED, solveTime: 0 });
+            this.players.push({ id: socket.id, username: username, status: RoomState.GAME_NOT_STARTED, solveTime: 0 });
             this.updateGameStatus();
         }
     }
@@ -55,8 +60,8 @@ class Room {
         console.log("current room state: ", this.roomStatus);
         switch (this.roomStatus) {
             case RoomState.GAME_NOT_STARTED:
-                if (this.players.length == 2) {
-                    this.io.to(this.roomID).emit("start game", this.players[0], this.players[1]);
+                if (this.players.length == this.maxPlayerCount) {
+                    this.io.to(this.roomID).emit("start game", this.players);
                     this.roomStatus = RoomState.INSPECTION_TIME;
 
                     for (const player of this.players) {

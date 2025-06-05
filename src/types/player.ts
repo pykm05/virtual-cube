@@ -1,5 +1,6 @@
 export type Player = {
-  id: string, 
+  id: string,
+  username: string,
   status: string
   solveTime: number;
 };

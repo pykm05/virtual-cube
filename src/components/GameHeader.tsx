@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { getSocket } from "@/socket";
+import { getSocket } from "@/lib/socket";
 
 enum RoomState {
   GAME_NOT_STARTED = "Awaiting players...",
