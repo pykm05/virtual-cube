@@ -15,7 +15,7 @@ class Room {
     private inspectionTime = 15;
     private solveTime: number = 0;
     private maxPlayerCount = 2;
-    private solveTimeLimit: number = 50; // 300
+    private solveTimeLimit: number = 10; // 300
     private io: Server;
     private roomStatus = RoomState.GAME_NOT_STARTED;
 

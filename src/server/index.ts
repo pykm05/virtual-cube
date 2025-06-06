@@ -18,7 +18,7 @@ const io = new Server(server, {
     }
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (res: Response) => {
     res.send('server running');
 });
 

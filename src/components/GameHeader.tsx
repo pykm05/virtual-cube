@@ -48,7 +48,7 @@ export default function Game() {
   }, [roomState])
 
   return (
-    <div className="flex flex-col items-center w-full border-2 border-red-500 p-5 bg-purple-800 text-white">
+    <div className="flex flex-col items-center w-full p-5 bg-purple-800 text-white">
       <div>{roomState}</div>
       <div>{roomState == RoomState.INSPECTION_TIME || roomState == RoomState.SOLVE_IN_PROGRESS ? timeRemaining : null}</div>
     </div>
