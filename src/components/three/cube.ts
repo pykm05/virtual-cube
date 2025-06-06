@@ -10,21 +10,19 @@ enum CubeState {
 class Cube {
 
     private cubeStatus = CubeState.NOT_MOVING;
-    static readonly turnSpeed = Math.PI / 20;
+    static readonly turnSpeed = Math.PI / 10;
     private moveQueue: Array<{ action: CubeAction, axis: EulerAxis, layer: number, direction: number }> = [];
 
     private axis: EulerAxis = 'x';
     private layer = 1;
     private direction: Direction = Direction.forward;
     private action: CubeAction = CubeAction.turn;
-    private special!: THREE.Mesh;
     private cubePosition = new WeakMap<THREE.Mesh, THREE.Vector3>();
     private pivot = new THREE.Object3D();
     private allPieces: THREE.Mesh[] = [];
     private activeGroup: THREE.Mesh[] = [];
-
-    // temporary
     private fullGroup: THREE.Group = new THREE.Group;
+    private solvedState: { position: THREE.Vector3 }[] = [];
 
     private scene: THREE.Scene;
     private renderer: THREE.WebGLRenderer;
@@ -47,8 +45,10 @@ class Cube {
                         new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Front - Green
                         new THREE.MeshBasicMaterial({ color: 0x0000ff })  // Back - Blue
                     ];
-                    const piece = new THREE.Mesh(geometry, cubeMaterials);
 
+                    const piece = new THREE.Mesh(geometry, cubeMaterials);
+                    const pieceId = this.allPieces.length;
+                    (piece as any).pieceId = pieceId;
                     piece.position.set(i, j, k);
 
                     this.cubePosition.set(piece, piece.position.clone());
@@ -56,7 +56,6 @@ class Cube {
 
                     // special piece to track coordinates
                     if (i === 1 && j === 1 && k === 1) {
-                        this.special = piece;
                         const shape = new THREE.Shape();
                         shape.moveTo(0, 0);
                         shape.lineTo(0, 1);
@@ -79,6 +78,12 @@ class Cube {
                 }
             }
         }
+
+        this.solvedState = this.allPieces.map(p => ({
+            id: (p as any).pieceId,
+            position: p.position.clone(),
+        }));
+        
         this.render();
     }
 
@@ -122,7 +127,7 @@ class Cube {
             this.cubeStatus = CubeState.NOT_MOVING;
             // this.updateCubeStatus(); uncomment to activate moveQueue(BROKEN)
 
-            console.log(this.special.getWorldPosition(new THREE.Vector3()));
+            this.checkIfSolved();
         }
     }
 
@@ -151,7 +156,6 @@ class Cube {
     }
 
     private updateCubeStatus() {
-        console.log("current cube state: ", this.cubeStatus);
         switch (this.cubeStatus) {
             case CubeState.NOT_MOVING:
                 if (this.moveQueue.length > 0) {
@@ -166,7 +170,6 @@ class Cube {
                 }
                 break;
             case CubeState.MOVE_IN_PROGRESS:
-                console.log('Move has been queued');
                 break;
             case CubeState.SOLVED:
                 // solved
@@ -221,6 +224,33 @@ class Cube {
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(() => this.render());
     }
+
+    private checkIfSolved(): boolean {
+        const tolerance = 0.001;
+    
+        for (let i = 0; i < this.allPieces.length; i++) {
+            const pieceA = this.allPieces[i];
+            const posA = pieceA.getWorldPosition(new THREE.Vector3());
+    
+            for (let j = i + 1; j < this.allPieces.length; j++) {
+                const pieceB = this.allPieces[j];
+                const posB = pieceB.getWorldPosition(new THREE.Vector3());
+    
+                const currentDist = posA.distanceTo(posB);
+    
+                const solvedPosA = this.solvedState[i].position;
+                const solvedPosB = this.solvedState[j].position;
+                const solvedDist = solvedPosA.distanceTo(solvedPosB);
+    
+                if (Math.abs(currentDist - solvedDist) > tolerance) {
+                    return false;
+                }
+            }
+        }
+        console.log('solved')
+        return true;
+    }
+
 
     handleInput(e: string) {
         switch (e) { // params: action type, axis, layer, direction

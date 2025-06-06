@@ -1,7 +1,7 @@
 "use client"
 import { useEffect} from "react";
-import { getSocket } from "@/lib/socket";
 import { useRouter } from "next/navigation";
+import { getSocket } from "@/lib/socket";
 import GameWindow from "@/components/GameWindow";
 import GameHeader from "@/components/GameHeader";
 import GamePopup from "@/components/GamePopup";
@@ -25,7 +25,6 @@ export default function PlayerWindow() {
       <GameHeader />
       <GameWindow />
       <GamePopup />
-
     </div>
   );
 }
