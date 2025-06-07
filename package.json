@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "next": "next dev",
-    "server": "node --loader ts-node/esm src/server/index.ts",
+    "dev": "tsx src/server/index.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -29,8 +29,10 @@
     "@types/three": "^0.177.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "nodemon": "^3.1.10",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
 }
