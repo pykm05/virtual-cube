@@ -10,6 +10,11 @@ export enum CubeAction {
   cubeRotation = "Cube rotation"
 }
 
+export enum CubeState {
+  NOT_MOVING = "Not moving",
+  MOVE_IN_PROGRESS = "Move in progress",
+}
+
 export const ninetyDegrees = Math.PI / 2;
 
 export function nearlyEqual(a: number, b: number, d = 0.001) {

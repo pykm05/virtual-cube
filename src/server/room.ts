@@ -18,6 +18,7 @@ class Room {
     private solveTimeLimit: number = 300; // 300
     private io: Server;
     private roomStatus = RoomState.GAME_NOT_STARTED;
+    private rankings: Player[] = [];
 
     constructor(roomID: string, io: Server) {
         this.io = io;
@@ -48,12 +49,21 @@ class Room {
 
         if (this.players[this.findPlayerIndex(socketID)].status == RoomState.INSPECTION_TIME) {
             if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
+                this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                 this.io.to(socketID).emit("solve in progress");
                 this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
-                this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                 this.updateGameStatus();
             }
         }
+    }
+
+    playerSolveComplete(socketID: string) {
+        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) this.roomStatus = RoomState.GAME_ENDED;
+
+        this.io.to(socketID).emit("game complete");
+        this.players[this.findPlayerIndex(socketID)].status = RoomState.GAME_ENDED;
+        this.rankings.push(this.players[this.findPlayerIndex(socketID)]);
+        this.updateGameStatus();
     }
 
     private updateGameStatus() {
@@ -80,7 +90,7 @@ class Room {
                     for (const player of this.players) {
                         if (player.status == RoomState.INSPECTION_TIME) this.io.to(player.id).emit("timer update", this.inspectionTime);
                     }
-    
+
                     if (this.inspectionTime == 0 || !this.players.some(player => player.status == RoomState.INSPECTION_TIME)) {
                         for (const player of this.players) {
                             if (player.status == RoomState.INSPECTION_TIME) {
@@ -96,12 +106,12 @@ class Room {
 
                         clearTimeout(inspectionTimer);
                     }
-                  }, 1000);
+                }, 1000);
                 break;
             case RoomState.SOLVE_IN_PROGRESS:
                 const solveTimer = setInterval(() => {
                     this.solveTime += 0.01;
-                    
+
                     for (const player of this.players) {
                         if (player.status == RoomState.SOLVE_IN_PROGRESS) {
                             player.solveTime += 0.01;
@@ -127,7 +137,8 @@ class Room {
                 }, 10);
                 break;
             case RoomState.GAME_ENDED:
-                this.io.to(this.roomID).emit("game complete", RoomState.GAME_ENDED);
+                if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
+                // else delete room 
                 break;
             default:
                 break;

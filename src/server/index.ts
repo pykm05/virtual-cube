@@ -44,8 +44,8 @@ io.on("connection", (socket: Socket) => {
             return;
         };
 
-        room.handleInput(socketID, key)
-    })
+        room.handleInput(socketID, key);
+    });
 
     socket.on("user joined", () => {
         if (!room) {
@@ -64,16 +64,20 @@ io.on("connection", (socket: Socket) => {
         }
 
         room.addPlayer(socket, username);
-    })
+    });
+
+    socket.on("cube solved", (socketID) => {
+        if (socket.id == socketID) room.playerSolveComplete(socketID);
+    });
 
     socket.on("remove player", (socketID: string) => {
         if (socketID == socket.id) socket.disconnect();
-    })
+    });
 
     socket.on("disconnect", () => {
         if (room) room.removePlayer(socket);
         console.log('disconnect');
-    })
+    });
 });
 
 const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
