@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socket";
 import GameWindow from "@/components/GameWindow";
 import GameHeader from "@/components/GameHeader";
-import GamePopup from "@/components/GamePopup";
+import GameModal from "@/components/GameModal";
 
 export default function PlayerWindow() {
 
@@ -24,7 +24,7 @@ export default function PlayerWindow() {
     <div className="flex flex-col border-2 border-red-800 w-screen h-screen">
       <GameHeader />
       <GameWindow />
-      <GamePopup />
+      <GameModal />
     </div>
   );
 }

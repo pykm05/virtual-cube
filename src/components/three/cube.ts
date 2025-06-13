@@ -187,8 +187,6 @@ class Cube {
             });
 
             this.cubeStatus = CubeState.NOT_MOVING;
-            console.log("cube is solved:", this.isSolved())
-            // this.updateCubeStatus(); uncomment to activate moveQueue(BROKEN)
         }
     }
 
@@ -212,27 +210,20 @@ class Cube {
 
             this.scene.remove(this.fullGroup);
             this.cubeStatus = CubeState.NOT_MOVING;
-            // this.updateCubeStatus(); uncomment to activate moveQueue(BROKEN)
         }
     }
 
     private updateCubeStatus() {
-        switch (this.cubeStatus) {
-            case CubeState.NOT_MOVING:
-                if (this.moveQueue.length > 0) {
-                    const move = this.moveQueue.pop();
-                    if (!move) return;
+        if (this.cubeStatus == CubeState.NOT_MOVING && this.moveQueue.length > 0) {
+            const move = this.moveQueue.pop();
 
-                    const { action, axis, layer, direction } = move;
-                    this.setActiveGroup(action, axis, layer, direction);
+            if (!move) return;
 
-                    this.cubeStatus = CubeState.MOVE_IN_PROGRESS; // triggers doTurn() or doRotation() in render()
-                    this.updateCubeStatus();
-                }
-                break;
+            const { action, axis, layer, direction } = move;
+            this.setActiveGroup(action, axis, layer, direction);
 
-            default:
-                console.log("Invalid cube state");
+            this.cubeStatus = CubeState.MOVE_IN_PROGRESS; // triggers doTurn() or doRotation() in render()
+            this.updateCubeStatus();
         }
     }
 

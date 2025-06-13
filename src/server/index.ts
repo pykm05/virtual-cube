@@ -66,7 +66,7 @@ io.on("connection", (socket: Socket) => {
         room.addPlayer(socket, username);
     });
 
-    socket.on("cube solved", (socketID) => {
+    socket.on("solve complete", (socketID) => {
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     });
 

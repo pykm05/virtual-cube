@@ -1,12 +1,32 @@
 "use client"
 import { useEffect, useState } from "react";
 import { getSocket, getPlayerOrder } from "@/lib/socket";
-import newScene from "@/lib/gameInstance";
+import { Cube } from "@/components/three/cube";
+import Scene from "@/components/three/scene";
 import { Player } from "@/types/player";
 import Image from "next/image";
 
 export default function GameWindow() {
   const [roomUsers, setRoomUsers] = useState<Player[]>([]);
+
+  function newScene(container: HTMLElement, assignedSocketID: string) {
+    const { scene, renderer, camera } = Scene(container);
+    const cube = new Cube(scene, renderer, camera);
+  
+    const socket = getSocket();
+    const emitter = socket.id == assignedSocketID;
+  
+    if (emitter) window.addEventListener("keydown", (e) => socket.emit("keyboard input", socket.id, e.key));
+  
+    socket.on("keyboard input", async (socketID: string, key: string) => {
+      if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
+        cube.handleInput(key);
+  
+        // long
+        if (emitter && await cube.isSolved() && key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') socket.emit("solve complete", socket.id);
+      }
+    });
+  }
 
   useEffect(() => {
     const socket = getSocket();
