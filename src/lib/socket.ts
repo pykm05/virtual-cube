@@ -14,11 +14,13 @@ export function getSocket() {
 }
 
 export function getPlayerOrder(players: Player[]) {
-    for (let i = 0; i < players.length; i++) {
+    const length = players.length;
+    for (let i = 0; i < length - 1; i++) {
         if (players[i].id == socket.id) {
             let tmp = players[i];
-            players[i] = players[0];
-            players[0] = tmp;
+            players[i] = players[length - 1];
+            players[length - 1] = tmp;
+            break;
         }
     }
     return players;

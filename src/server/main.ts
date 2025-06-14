@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { Server, Socket } from "socket.io";
 import http from "http";
 import { Room } from "./room.ts";
+import { Player } from "@/types/player.ts";
+import { RoomState } from "@/types/RoomState.ts";
 
 const app = express();
 const port = 4000;
@@ -29,13 +31,22 @@ server.listen(port, () => {
 const Rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
-    let room: Room;
+    let room: Room | null;
+    let prevRoomID: string = "";
     let username: string;
 
-    socket.on("join room", (input: string) => {
+    socket.on("search room", (input: string) => {
+        if (room) {
+            room.removePlayer(socket.id);
+            socket.leave(room.roomID);
+
+            prevRoomID = room.roomID;
+            room = null;
+        }
+
         username = input;
-        room = findRoom(room);
-        io.to(socket.id).emit("join room", room.roomID);
+        room = findRoom(room, prevRoomID);
+        io.to(socket.id).emit("room found", room.roomID);
     });
 
     socket.on("keyboard input", (socketID, key) => {
@@ -66,25 +77,39 @@ io.on("connection", (socket: Socket) => {
         room.addPlayer(socket, username);
     });
 
+    socket.on("new game", (socketID) => {
+        if (!room) return;
+
+        room.removePlayer(socketID);
+    });
+
     socket.on("solve complete", (socketID) => {
+        if (!room) return;
+        
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     });
 
     socket.on("remove player", (socketID: string) => {
-        if (socketID == socket.id) socket.disconnect();
+        if (!room) return;
+        room.removePlayer(socketID);
+        socket.leave(room.roomID);
     });
 
     socket.on("disconnect", () => {
-        if (room) room.removePlayer(socket);
+        if (room) room.removePlayer(socket.id);
         console.log('disconnect');
     });
 });
 
 const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
-function findRoom(room: Room) {
+function findRoom(room: Room | null, prevRoomID: string) {
     for (const curr of Rooms) {
-        if (curr.players.length <= curr.getMaxPlayerCount() - 1) room = curr;
+        if (curr.players.length <= curr.getMaxPlayerCount() - 1 
+            && prevRoomID != curr.roomID
+            && curr.roomStatus == RoomState.GAME_NOT_STARTED) {
+            room = curr;
+        }
     }
 
     if (!room) {

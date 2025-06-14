@@ -1,23 +1,18 @@
 import { Server, Socket } from "socket.io";
 import { Player } from "@/types/player";
-
-enum RoomState {
-    GAME_NOT_STARTED = "Game not started",
-    INSPECTION_TIME = "Cube inspection",
-    SOLVE_IN_PROGRESS = "Solve in progress",
-    GAME_ENDED = "Game complete"
-}
+import { RoomState } from "@/types/RoomState";
 
 class Room {
 
     public roomID: string;
     public players: Player[] = [];
+    public roomStatus = RoomState.GAME_NOT_STARTED;
+
     private inspectionTime = 15;
     private solveTime: number = 0;
     private maxPlayerCount = 2;
     private solveTimeLimit: number = 300; // 300
     private io: Server;
-    private roomStatus = RoomState.GAME_NOT_STARTED;
     private rankings: Player[] = [];
 
     constructor(roomID: string, io: Server) {
@@ -33,17 +28,17 @@ class Room {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
             socket.to(socket.id).emit("invalid join");
         } else {
-            if (username == "") username = "an unnamed cuber";
+            if (username == "") username = `an unnamed cuber ${this.players.length + 1}`;
 
             socket.join(this.roomID);
-            this.players.push({ id: socket.id, username: username, status: RoomState.GAME_NOT_STARTED, solveTime: 0, won: false });
+            this.players.push({ id: socket.id, username: username, status: RoomState.GAME_NOT_STARTED, solveTime: 0 });
             this.updateGameStatus();
         }
     }
 
-    removePlayer(socket: Socket) {
-        this.players = this.players.filter(player => player.id !== socket.id);
-        this.io.to(this.roomID).emit("remove player", socket.id);
+    removePlayer(socketID: string) {
+        this.players = this.players.filter(player => player.id !== socketID);
+        this.io.to(this.roomID).emit("remove player", socketID);
     }
 
     handleInput(socketID: string, key: string) {

@@ -7,7 +7,7 @@ import { Player } from "@/types/player";
 import Image from "next/image";
 
 export default function GameWindow() {
-  const [roomUsers, setRoomUsers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
 
   function newScene(container: HTMLElement, assignedSocketID: string) {
     const { scene, renderer, camera } = Scene(container);
@@ -32,23 +32,27 @@ export default function GameWindow() {
     const socket = getSocket();
 
     socket.on("start game", (users: Player[]) => {
-      setRoomUsers(getPlayerOrder(users));
+      setPlayers(getPlayerOrder(users));
+    });
+
+    socket.on("remove player", (pID: string) => {
+      setPlayers(players.filter(player => player.id !== pID));
     });
   }, []);
 
   useEffect(() => {
-    for (let i = 0; i < roomUsers.length; i++) {
-      const userID = roomUsers[i].id;
+    for (let i = 0; i < players.length; i++) {
+      const userID = players[i].id;
       const element = document.getElementById(userID);
       if (element) {
         newScene(element, userID);
       }
     }
-  }, [roomUsers]);
+  }, [players]);
 
   return (
     <div className="flex justify-center w-screen h-screen">
-      {roomUsers.map((user: Player) => (
+      {players.map((user: Player) => (
         <div key={user.id} className="flex flex-1 flex-col">
           <div className="flex items-center px-3 w-full gap-[20px]">
             <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />

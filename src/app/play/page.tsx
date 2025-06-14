@@ -1,22 +1,30 @@
 "use client"
-import { getSocket } from "@/lib/socket";
+import { getSocket, Socket } from "@/lib/socket";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function PlayHome() {
     const [username, setUsername] = useState("");
+    const [socket, setSocket] = useState<Socket>();
     const router = useRouter();
 
     function handleClick() {
-        const socket = getSocket();
+       if (!socket) return;
 
-        socket.emit("join room", username);
+        socket.emit("search room", username);
 
-        socket.on("join room", (roomID) => {
+        socket.on("room found", (roomID) => {
             console.log("now joining room ", roomID);
             router.push(`play/${roomID}`);
-        })
+
+            socket.off("room found");
+        });
     }
+
+    useEffect(() => {
+        const socket = getSocket();
+        setSocket(socket);
+    }, []);
 
     return (
         <div className="flex w-screen h-screen justify-center items-center border-2 border-red">

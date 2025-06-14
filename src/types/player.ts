@@ -3,5 +3,4 @@ export type Player = {
   username: string,
   status: string
   solveTime: number,
-  won: boolean
 };
