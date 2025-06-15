@@ -46,10 +46,13 @@ class Room {
 
         if (this.players[this.findPlayerIndex(socketID)].status == RoomState.INSPECTION_TIME) {
             if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
-                this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+                if (this.roomStatus == RoomState.INSPECTION_TIME) {
+                    this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+                    this.updateGameStatus();
+                }
+
                 this.io.to(socketID).emit("solve in progress");
                 this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
-                this.updateGameStatus();
             }
         }
     }
