@@ -60,6 +60,8 @@ class Room {
     playerSolveComplete(socketID: string) {
         if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) this.roomStatus = RoomState.GAME_ENDED;
 
+        if (this.rankings.some((player) => player.id == socketID)) return;
+
         const player = this.players[this.findPlayerIndex(socketID)];
         player.solveTime = Number(player.solveTime.toFixed(2));
         this.io.to(socketID).emit("solve complete", player);

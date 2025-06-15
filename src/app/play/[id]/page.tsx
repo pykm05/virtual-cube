@@ -17,6 +17,8 @@ export default function PlayerWindow() {
 
     socket.on("invalid join", () => {
       router.push("./");
+
+      socket.off("invalid join");
     });
   }, []);
 
