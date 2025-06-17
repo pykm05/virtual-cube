@@ -11,7 +11,9 @@ export default function PlayHome() {
     function handleClick() {
        if (!socket) return;
 
-        socket.emit("search room", username);
+        socket.emit("initialize player", username);
+
+        socket.emit("search room");
 
         socket.on("room found", (roomID) => {
             console.log("now joining room ", roomID);
@@ -27,8 +29,8 @@ export default function PlayHome() {
     }, []);
 
     return (
-        <div className="flex w-screen h-screen justify-center items-center border-2 border-red">
-            <div className="flex flex-col w-[500px] h-[500px] justify-center items-center border-2 border-green-400">
+        <div className="flex w-screen h-screen justify-center items-center">
+            <div className="flex flex-col w-[500px] h-[500px] justify-center items-center">
                 <div className="flex flex-col items-center justify-center gap-[30px]">
                     <h1 className="min-w-[200px] text-[50px]">Virtual Cube</h1>
                     <input type="text" onChange={(e) => setUsername(e.target.value)} className="px-2 py-0.5 border-2" autoComplete="off" placeholder="enter username" maxLength={30} />

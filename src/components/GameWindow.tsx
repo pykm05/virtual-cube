@@ -23,7 +23,10 @@ export default function GameWindow() {
         cube.handleInput(key);
   
         // long
-        if (emitter && await cube.isSolved() && key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') socket.emit("solve complete", socket.id);
+        if (emitter && await cube.isSolved() && key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') {
+          socket.emit("solve complete", socket.id);
+          socket.off("keyboard input");
+        }
       }
     });
   }
@@ -35,8 +38,9 @@ export default function GameWindow() {
       setPlayers(getPlayerOrder(users));
     });
 
-    socket.on("remove player", (pID: string) => {
-      setPlayers(players.filter(player => player.id !== pID));
+    socket.on("remove player", (socketID: string) => {
+      // console.log(socketID, "was removed")
+      // setPlayers(players.filter(player => player.id !== socketID));
     });
   }, []);
 
@@ -48,12 +52,14 @@ export default function GameWindow() {
         newScene(element, userID);
       }
     }
+
+    console.log('new render')
   }, [players]);
 
   return (
     <div className="flex justify-center w-screen h-screen">
       {players.map((user: Player) => (
-        <div key={user.id} className="flex flex-1 flex-col">
+        user && <div key={user.id} className="flex flex-1 flex-col">
           <div className="flex items-center px-3 w-full gap-[20px]">
             <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
             <div>{user.username ? user.username : "an unnamed cuber"}</div>

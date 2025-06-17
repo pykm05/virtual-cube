@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { getSocket, Socket } from "@/lib/socket";
 import { Player } from "@/types/player";
+import { RoomState } from "@/types/RoomState";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -32,29 +33,33 @@ export default function GameModal() {
   function displayResults() {
     if (!player) return;
 
-    const first = playerRanks[0].id == player.id;
-    const opponent = first ? playerRanks[1] : playerRanks[0];
+    const tied = playerRanks[0].solveTime == playerRanks[1].solveTime;
+    const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
+    const oppDNF = opponent.status == RoomState.DNF;
+    const won = (oppDNF || opponent.id == playerRanks[1].id)
 
     return (
       <div className="flex flex-col w-full h-full">
-        <div className="flex text-lg mb-[20px] justify-center items-center px-3 py-5 border-b-2">{first ? "You won!" : "You lost"}</div>
-        <div className="flex">
-          <div className="flex flex-1 justify-center">
-            {!first &&
-              <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
-            }
+        <div className="flex text-lg mb-[20px] justify-center items-center px-3 py-5 border-b-2">{tied ? "Tie" : won ? "You won!" : "You lost"}</div>
+        {!tied && (
+          <div className="flex">
+            <div className="flex flex-1 justify-center">
+              {!oppDNF && !won && 
+                <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
+              }
+            </div>
+            <div className="flex flex-1 justify-center">
+              {won &&
+                <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
+              }
+            </div>
           </div>
-          <div className="flex flex-1 justify-center">
-            {first &&
-              <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
-            }
-          </div>
-        </div>
+        )}
         <div className="flex mb-[40px] w-full h-full items-center">
           <div className="flex flex-1 flex-col items-center">
             <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
             <div>{opponent.username}</div>
-            <div>{opponent.solveTime}</div>
+            <div>{oppDNF ? "DNF" : opponent.solveTime}</div>
           </div>
           <div className="flex flex-1 flex-col items-center">
             <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />

@@ -23,7 +23,7 @@ export default function PlayerWindow() {
   }, []);
 
   return (
-    <div className="flex flex-col border-2 border-red-800 w-screen h-screen">
+    <div className="flex flex-col w-screen h-screen">
       <GameHeader />
       <GameWindow />
       <GameModal />

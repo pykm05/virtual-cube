@@ -31,23 +31,30 @@ server.listen(port, () => {
 const Rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
+    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0 };
     let room: Room | null;
     let prevRoomID: string = "";
-    let username: string;
 
-    socket.on("search room", (input: string) => {
+    socket.on("initialize player", (username: string) => {
+        player.username = username;
+
+        socket.emit("search room");
+    });
+
+    socket.on("search room", () => {
         if (room) {
-            room.removePlayer(socket.id);
+            room.removePlayer(player.id);
             socket.leave(room.roomID);
 
             prevRoomID = room.roomID;
             room = null;
+            player.status = RoomState.GAME_NOT_STARTED;
+            player.solveTime = 0;
         }
 
-        username = input;
         room = findRoom(room, prevRoomID);
         io.to(socket.id).emit("room found", room.roomID);
-    });
+    })
 
     socket.on("keyboard input", (socketID, key) => {
         if (!room) {
@@ -74,7 +81,7 @@ io.on("connection", (socket: Socket) => {
             }
         }
 
-        room.addPlayer(socket, username);
+        room.addPlayer(socket, player);
     });
 
     socket.on("new game", (socketID) => {
@@ -85,18 +92,21 @@ io.on("connection", (socket: Socket) => {
 
     socket.on("solve complete", (socketID) => {
         if (!room) return;
-        
+
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     });
 
     socket.on("remove player", (socketID: string) => {
         if (!room) return;
+
         room.removePlayer(socketID);
         socket.leave(room.roomID);
     });
 
     socket.on("disconnect", () => {
-        if (room) room.removePlayer(socket.id);
+        if (room) room.removePlayer(player.id);
+
+        console.log("hiasdfasdf");
         console.log('disconnect');
     });
 });
@@ -105,7 +115,7 @@ const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.r
 
 function findRoom(room: Room | null, prevRoomID: string) {
     for (const curr of Rooms) {
-        if (curr.players.length <= curr.getMaxPlayerCount() - 1 
+        if (curr.players.length <= curr.getMaxPlayerCount() - 1
             && prevRoomID != curr.roomID
             && curr.roomStatus == RoomState.GAME_NOT_STARTED) {
             room = curr;

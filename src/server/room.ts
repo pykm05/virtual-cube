@@ -24,21 +24,21 @@ class Room {
         return this.maxPlayerCount;
     }
 
-    addPlayer(socket: Socket, username: string) {
+    addPlayer(socket: Socket, player: Player) {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
             socket.to(socket.id).emit("invalid join");
         } else {
-            if (username == "") username = `an unnamed cuber ${this.players.length + 1}`;
+            if (player.username == "") player.username = `an unnamed cuber ${this.players.length + 1}`;
 
             socket.join(this.roomID);
-            this.players.push({ id: socket.id, username: username, status: RoomState.GAME_NOT_STARTED, solveTime: 0 });
+            this.players.push(player);
             this.updateGameStatus();
         }
     }
 
     removePlayer(socketID: string) {
-        this.players = this.players.filter(player => player.id !== socketID);
-        this.io.to(this.roomID).emit("remove player", socketID);
+        const playerIndex = this.findPlayerIndex(socketID);
+        if (playerIndex != -1) this.players[playerIndex].status = RoomState.DNF;
     }
 
     handleInput(socketID: string, key: string) {
@@ -58,14 +58,12 @@ class Room {
     }
 
     playerSolveComplete(socketID: string) {
-        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) this.roomStatus = RoomState.GAME_ENDED;
-
         if (this.rankings.some((player) => player.id == socketID)) return;
 
         const player = this.players[this.findPlayerIndex(socketID)];
+        player.status = RoomState.GAME_ENDED;
         player.solveTime = Number(player.solveTime.toFixed(2));
         this.io.to(socketID).emit("solve complete", player);
-        player.status = RoomState.GAME_ENDED;
 
         let inserted = false;
 
@@ -79,23 +77,32 @@ class Room {
 
         if (!inserted) this.rankings.push(player);
 
-        if (!this.players.some(player => player.status != RoomState.GAME_ENDED)) this.io.to(socketID).emit("game complete", this.rankings);
+        if (!this.players.some(player => player.status != RoomState.GAME_ENDED && player.status != RoomState.DNF)) this.io.to(socketID).emit("game complete", this.rankings)
 
-        this.updateGameStatus();
+        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
+            this.roomStatus = RoomState.GAME_ENDED;
+            this.updateGameStatus();
+        }
     }
+
+    // processRematch(socketID: string) {
+    //     if (this.player)
+    // }
 
     private updateGameStatus() {
         console.log("current room state: ", this.roomStatus);
         switch (this.roomStatus) {
             case RoomState.GAME_NOT_STARTED:
                 if (this.players.length == this.maxPlayerCount) {
-                    this.io.to(this.roomID).emit("start game", this.players);
-                    this.roomStatus = RoomState.INSPECTION_TIME;
-
                     for (const player of this.players) {
-                        player.status = RoomState.INSPECTION_TIME;
+                        if (player.status == RoomState.GAME_NOT_STARTED) {
+                            this.io.to(player.id).emit("start game", this.players);
+                            player.status = RoomState.INSPECTION_TIME
+                        }
                     }
 
+                    console.log("game start")
+                    this.roomStatus = RoomState.INSPECTION_TIME;
                     this.updateGameStatus();
                 }
                 break;
@@ -139,10 +146,10 @@ class Room {
 
                     if (this.solveTime >= this.solveTimeLimit || !this.players.some(player => player.status != RoomState.GAME_ENDED)) {
                         for (const player of this.players) {
-                            if (player.status == RoomState.SOLVE_IN_PROGRESS) {
+                            if (player.status != RoomState.DNF) {
+                                player.status = RoomState.GAME_ENDED;
                                 player.solveTime = Number(player.solveTime.toFixed(2));
                                 this.io.to(player.id).emit("solve complete", player);
-                                player.status = RoomState.GAME_ENDED;
                             }
                         }
 
@@ -159,7 +166,12 @@ class Room {
                 break;
             case RoomState.GAME_ENDED:
                 if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
-                // else delete room 
+
+                this.players = [];
+                this.roomStatus = RoomState.GAME_NOT_STARTED;
+                this.inspectionTime = 15;
+                this.solveTime = 0;
+                this.rankings = [];
                 break;
             default:
                 break;
