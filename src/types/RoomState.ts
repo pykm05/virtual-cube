@@ -3,5 +3,4 @@ export enum RoomState {
   INSPECTION_TIME = "Cube inspection",
   SOLVE_IN_PROGRESS = "Solve in progress",
   GAME_ENDED = "Game complete",
-  DNF = "DNF"
 }

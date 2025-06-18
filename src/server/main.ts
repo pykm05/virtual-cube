@@ -31,17 +31,17 @@ server.listen(port, () => {
 const Rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
-    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0 };
+    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0, isDNF: false };
     let room: Room | null;
     let prevRoomID: string = "";
 
-    socket.on("initialize player", (username: string) => {
+    socket.on("player:initialize", (username: string) => {
         player.username = username;
 
-        socket.emit("search room");
+        socket.emit("room:search");
     });
 
-    socket.on("search room", () => {
+    socket.on("room:search", () => {
         if (room) {
             room.removePlayer(player.id);
             socket.leave(room.roomID);
@@ -53,21 +53,21 @@ io.on("connection", (socket: Socket) => {
         }
 
         room = findRoom(room, prevRoomID);
-        io.to(socket.id).emit("room found", room.roomID);
+        io.to(socket.id).emit("room:found", room.roomID);
     })
 
-    socket.on("keyboard input", (socketID, key) => {
+    socket.on("keyboard:input", (socketID, key) => {
         if (!room) {
-            io.to(socket.id).emit("invalid join");
+            io.to(socket.id).emit("join:invalid");
             return;
         };
 
         room.handleInput(socketID, key);
     });
 
-    socket.on("user joined", () => {
+    socket.on("user:joined", () => {
         if (!room) {
-            io.to(socket.id).emit("invalid join");
+            io.to(socket.id).emit("join:invalid");
             return;
         };
 
@@ -84,19 +84,13 @@ io.on("connection", (socket: Socket) => {
         room.addPlayer(socket, player);
     });
 
-    socket.on("new game", (socketID) => {
-        if (!room) return;
-
-        room.removePlayer(socketID);
-    });
-
-    socket.on("solve complete", (socketID) => {
+    socket.on("player:completed_solve", (socketID) => {
         if (!room) return;
 
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     });
 
-    socket.on("remove player", (socketID: string) => {
+    socket.on("player:remove", (socketID: string) => {
         if (!room) return;
 
         room.removePlayer(socketID);
@@ -106,7 +100,6 @@ io.on("connection", (socket: Socket) => {
     socket.on("disconnect", () => {
         if (room) room.removePlayer(player.id);
 
-        console.log("hiasdfasdf");
         console.log('disconnect');
     });
 });

@@ -22,8 +22,6 @@ Then run the webserver:
 npm run next
 ```
 
-Open [http://localhost:3000/play](http://localhost:3000/play) with your browser to see the result.
-
 ## Contributing
 
 Join our [Discord](https://discord.gg/ZDTMZz7B) for information about the development process.

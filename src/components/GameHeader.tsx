@@ -16,19 +16,19 @@ export default function Game() {
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on("timer update", (time) => {
+    socket.on("timer:update", (time) => {
       setTimeRemaining(time);
     })
 
-    socket.on("start inspection", () => {
+    socket.on("inspection:start", () => {
       setRoomState(RoomState.INSPECTION_TIME);
     })
 
-    socket.on("solve in progress", () => {
+    socket.on("solve:in_progress", () => {
       setRoomState(RoomState.SOLVE_IN_PROGRESS);
     })
 
-    socket.on("game complete", () => {
+    socket.on("game:complete", () => {
       setRoomState(RoomState.GAME_ENDED);
     })
 

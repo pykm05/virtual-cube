@@ -20,13 +20,13 @@ export default function GameModal() {
   function findNewGame() {
     if (!socket || !player) return;
 
-    socket.emit("search room", player.username);
+    socket.emit("room:search", player.username);
 
-    socket.on("room found", (roomID) => {
+    socket.on("room:found", (roomID) => {
       console.log("now joining room ", roomID);
       router.push(`../play/${roomID}`);
 
-      socket.off("room found");
+      socket.off("room:found");
     });
   }
 
@@ -35,7 +35,7 @@ export default function GameModal() {
 
     const tied = playerRanks[0].solveTime == playerRanks[1].solveTime;
     const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
-    const oppDNF = opponent.status == RoomState.DNF;
+    const oppDNF = opponent.isDNF;
     const won = (oppDNF || opponent.id == playerRanks[1].id)
 
     return (
@@ -79,12 +79,12 @@ export default function GameModal() {
     const socket = getSocket();
     setSocket(socket);
 
-    socket.on("solve complete", (p: Player) => {
+    socket.on("player:completed_solve", (p: Player) => {
       setplayer(p);
       setCubeSolved(true);
     });
 
-    socket.on("game complete", (rankings: Player[]) => {
+    socket.on("game:complete", (rankings: Player[]) => {
       setGameComplete(true);
       setPlayerRanks(rankings);
     })

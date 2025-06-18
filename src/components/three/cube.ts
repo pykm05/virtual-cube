@@ -39,8 +39,10 @@ class Cube {
             id: (p as any).pieceId,
             position: p.position.clone(),
         }));
-
+        
         this.render();
+
+        this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
     }
 
     private createPiece(i: number, j: number, k: number) {
@@ -83,6 +85,8 @@ class Cube {
         }
 
         this.scene.add(piece);
+
+        
     }
 
     async isSolved() {
