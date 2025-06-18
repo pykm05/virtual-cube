@@ -11,15 +11,15 @@ export default function PlayHome() {
     function handleClick() {
        if (!socket) return;
 
-        socket.emit("initialize player", username);
+        socket.emit("player:initialize", username);
 
-        socket.emit("search room");
+        socket.emit("room:search");
 
-        socket.on("room found", (roomID) => {
+        socket.on("room:found", (roomID) => {
             console.log("now joining room ", roomID);
             router.push(`play/${roomID}`);
 
-            socket.off("room found");
+            socket.off("room:found");
         });
     }
 
