@@ -13,12 +13,12 @@ export default function PlayerWindow() {
   useEffect(() => {
     const socket = getSocket();
 
-    socket.emit("user joined");
+    socket.emit("user:joined");
 
-    socket.on("invalid join", () => {
+    socket.on("join:invalid", () => {
       router.push("./");
 
-      socket.off("invalid join");
+      socket.off("join:invalid");
     });
   }, []);
 
