@@ -16,16 +16,16 @@ export default function GameWindow() {
     const socket = getSocket();
     const emitter = socket.id == assignedSocketID;
   
-    if (emitter) window.addEventListener("keydown", (e) => socket.emit("keyboard input", socket.id, e.key));
+    if (emitter) window.addEventListener("keydown", (e) => socket.emit("keyboard:input", socket.id, e.key));
   
-    socket.on("keyboard input", async (socketID: string, key: string) => {
+    socket.on("keyboard:input", async (socketID: string, key: string) => {
       if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
         cube.handleInput(key);
   
         // long
         if (emitter && await cube.isSolved() && key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') {
-          socket.emit("solve complete", socket.id);
-          socket.off("keyboard input");
+          socket.emit("player:completed_solve", socket.id);
+          socket.off("keyboard:input");
         }
       }
     });
@@ -34,11 +34,11 @@ export default function GameWindow() {
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on("start game", (users: Player[]) => {
+    socket.on("game:start", (users: Player[]) => {
       setPlayers(getPlayerOrder(users));
     });
 
-    socket.on("remove player", (socketID: string) => {
+    socket.on("player:remove", (socketID: string) => {
       // console.log(socketID, "was removed")
       // setPlayers(players.filter(player => player.id !== socketID));
     });

@@ -15,11 +15,11 @@ export default function PlayHome() {
 
     setIsLoading(true);
     try {
-      socket.emit("initialize player", username.trim());
-      socket.emit("search room");
-      socket.on("room found", (roomID) => {
+      socket.emit("player:initialize", username.trim());
+      socket.emit("room:search");
+      socket.on("room:found", (roomID) => {
         router.push(`play/${roomID}`);
-        socket.off("room found");
+        socket.off("room:found");
       });
     } catch (error) {
       console.error("Error joining room:", error);
