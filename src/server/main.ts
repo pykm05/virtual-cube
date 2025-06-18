@@ -31,7 +31,7 @@ server.listen(port, () => {
 const Rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
-    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0 };
+    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0, isDNF: false };
     let room: Room | null;
     let prevRoomID: string = "";
 
@@ -106,7 +106,6 @@ io.on("connection", (socket: Socket) => {
     socket.on("disconnect", () => {
         if (room) room.removePlayer(player.id);
 
-        console.log("hiasdfasdf");
         console.log('disconnect');
     });
 });

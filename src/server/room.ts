@@ -38,13 +38,22 @@ class Room {
 
     removePlayer(socketID: string) {
         const playerIndex = this.findPlayerIndex(socketID);
-        if (playerIndex != -1) this.players[playerIndex].status = RoomState.DNF;
+
+        if (playerIndex != -1) {
+            const player = this.players[playerIndex];
+            player.isDNF = true;
+            player.status = RoomState.GAME_ENDED;
+            this.rankings.push(player);
+            this.io.to(socketID).emit("solve complete", player);
+        }
+
     }
 
     handleInput(socketID: string, key: string) {
         this.io.to(this.roomID).emit("keyboard input", socketID, key);
+        const playerIndex = this.findPlayerIndex(socketID);
 
-        if (this.players[this.findPlayerIndex(socketID)].status == RoomState.INSPECTION_TIME) {
+        if (playerIndex != -1 && this.players[playerIndex].status == RoomState.INSPECTION_TIME) {
             if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
                 if (this.roomStatus == RoomState.INSPECTION_TIME) {
                     this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
@@ -77,7 +86,10 @@ class Room {
 
         if (!inserted) this.rankings.push(player);
 
-        if (!this.players.some(player => player.status != RoomState.GAME_ENDED && player.status != RoomState.DNF)) this.io.to(socketID).emit("game complete", this.rankings)
+        if (!this.players.some(player => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+            console.log("rankings", this.rankings);
+            this.io.to(socketID).emit("game complete", this.rankings)
+        }
 
         if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
             this.roomStatus = RoomState.GAME_ENDED;
@@ -146,11 +158,10 @@ class Room {
 
                     if (this.solveTime >= this.solveTimeLimit || !this.players.some(player => player.status != RoomState.GAME_ENDED)) {
                         for (const player of this.players) {
-                            if (player.status != RoomState.DNF) {
-                                player.status = RoomState.GAME_ENDED;
-                                player.solveTime = Number(player.solveTime.toFixed(2));
-                                this.io.to(player.id).emit("solve complete", player);
-                            }
+                            this.rankings.push(player);
+                            player.status = RoomState.GAME_ENDED;
+                            player.solveTime = Number(player.solveTime.toFixed(2));
+                            this.io.to(player.id).emit("solve complete", player);
                         }
 
                         this.io.to(this.roomID).emit("game complete", this.rankings)
@@ -165,13 +176,13 @@ class Room {
                 }, 10);
                 break;
             case RoomState.GAME_ENDED:
-                if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
+                // if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
 
-                this.players = [];
-                this.roomStatus = RoomState.GAME_NOT_STARTED;
-                this.inspectionTime = 15;
-                this.solveTime = 0;
-                this.rankings = [];
+                // this.players = [];
+                // this.roomStatus = RoomState.GAME_NOT_STARTED;
+                // this.inspectionTime = 15;
+                // this.solveTime = 0;
+                // this.rankings = [];
                 break;
             default:
                 break;
