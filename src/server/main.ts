@@ -1,8 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { Response } from "express";
-import { Server, Socket } from "socket.io";
 import http from "http";
+import { Server, Socket } from "socket.io";
 import { Room } from "./room.ts";
 import { Player } from "@/types/player.ts";
 import { RoomState } from "@/types/RoomState.ts";
@@ -15,118 +14,125 @@ app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-    }
+  cors: { origin: "*" }
 });
 
-app.get('/', (res: Response) => {
-    res.send('server running');
+
+app.get('/', (_, res) => {
+  res.send('server running');
 });
+
 
 server.listen(port, () => {
-    console.log('connected')
+  console.log(`Server listening on port ${port}`);
 });
 
-const Rooms: Room[] = [];
+const rooms: Room[] = [];
 
 io.on("connection", (socket: Socket) => {
-    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0 };
-    let room: Room | null;
-    let prevRoomID: string = "";
+  const player: Player = {
+    id: socket.id,
+    username: "",
+    status: RoomState.GAME_NOT_STARTED,
+    solveTime: 0
+  };
 
-    socket.on("initialize player", (username: string) => {
-        player.username = username;
+  let currentRoom: Room | null = null;
+  let previousRoomID = "";
 
-        socket.emit("search room");
-    });
+  socket.on("initialize player", (username: string) => {
+    player.username = username;
+    socket.emit("search room");
+  });
 
-    socket.on("search room", () => {
-        if (room) {
-            room.removePlayer(player.id);
-            socket.leave(room.roomID);
+  socket.on("search room", () => {
+    if (currentRoom) {
+      currentRoom.removePlayer(player.id);
+      socket.leave(currentRoom.roomID);
+      previousRoomID = currentRoom.roomID;
+      currentRoom = null;
+      player.status = RoomState.GAME_NOT_STARTED;
+      player.solveTime = 0;
+    }
 
-            prevRoomID = room.roomID;
-            room = null;
-            player.status = RoomState.GAME_NOT_STARTED;
-            player.solveTime = 0;
+    currentRoom = findOrCreateRoom(previousRoomID);
+    socket.emit("room found", currentRoom.roomID);
+  });
+
+  socket.on("user joined", () => {
+    if (!currentRoom) {
+      socket.emit("invalid join");
+      return;
+    }
+
+    // Debugging output
+    for (const r of rooms) {
+      console.log(`${r.roomID}: ${r.players.length}`);
+      if (r.players.length > 2) {
+        for (const p of r.players) {
+          console.log(p.id);
         }
+      }
+    }
 
-        room = findRoom(room, prevRoomID);
-        io.to(socket.id).emit("room found", room.roomID);
-    })
+    currentRoom.addPlayer(socket, player);
+  });
 
-    socket.on("keyboard input", (socketID, key) => {
-        if (!room) {
-            io.to(socket.id).emit("invalid join");
-            return;
-        };
+  socket.on("keyboard input", (socketID: string, key: string) => {
+    if (!currentRoom) {
+      socket.emit("invalid join");
+      return;
+    }
 
-        room.handleInput(socketID, key);
-    });
+    currentRoom.handleInput(socketID, key);
+  });
 
-    socket.on("user joined", () => {
-        if (!room) {
-            io.to(socket.id).emit("invalid join");
-            return;
-        };
+  socket.on("new game", (socketID: string) => {
+    if (currentRoom) {
+      currentRoom.removePlayer(socketID);
+    }
+  });
 
-        // debugging
-        for (const room of Rooms) {
-            console.log(`${room.roomID}: ${room.players.length}`)
-            if (room.players.length > 2) {
-                for (const player of room.players) {
-                    console.log(player.id);
-                }
-            }
-        }
+  socket.on("solve complete", (socketID: string) => {
+    if (currentRoom && socket.id === socketID) {
+      currentRoom.playerSolveComplete(socketID);
+    }
+  });
 
-        room.addPlayer(socket, player);
-    });
+  socket.on("remove player", (socketID: string) => {
+    if (!currentRoom) return;
 
-    socket.on("new game", (socketID) => {
-        if (!room) return;
+    currentRoom.removePlayer(socketID);
+    socket.leave(currentRoom.roomID);
+  });
 
-        room.removePlayer(socketID);
-    });
+  socket.on("disconnect", () => {
+    if (currentRoom) {
+      currentRoom.removePlayer(player.id);
+    }
 
-    socket.on("solve complete", (socketID) => {
-        if (!room) return;
-
-        if (socket.id == socketID) room.playerSolveComplete(socketID);
-    });
-
-    socket.on("remove player", (socketID: string) => {
-        if (!room) return;
-
-        room.removePlayer(socketID);
-        socket.leave(room.roomID);
-    });
-
-    socket.on("disconnect", () => {
-        if (room) room.removePlayer(player.id);
-
-        console.log("hiasdfasdf");
-        console.log('disconnect');
-    });
+    console.log("Client disconnected:", socket.id);
+  });
 });
 
-const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
-function findRoom(room: Room | null, prevRoomID: string) {
-    for (const curr of Rooms) {
-        if (curr.players.length <= curr.getMaxPlayerCount() - 1
-            && prevRoomID != curr.roomID
-            && curr.roomStatus == RoomState.GAME_NOT_STARTED) {
-            room = curr;
-        }
+function generateRoomID(length: number): string {
+  return [...Array(length)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
+function findOrCreateRoom(prevRoomID: string): Room {
+  for (const r of rooms) {
+    if (
+      r.players.length < r.getMaxPlayerCount() &&
+      r.roomID !== prevRoomID &&
+      r.roomStatus === RoomState.GAME_NOT_STARTED
+    ) {
+      return r;
     }
+  }
 
-    if (!room) {
-        room = new Room(genRanHex(5), io);
-        Rooms.push(room);
-        console.log("room could not be found")
-    }
-
-    return room;
+  const newRoom = new Room(generateRoomID(5), io);
+  rooms.push(newRoom);
+  console.log("Created new room:", newRoom.roomID);
+  return newRoom;
 }

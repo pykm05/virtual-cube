@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "next": "next dev",
+    "concurrent": "node run-dev.js",
     "dev": "tsx src/server/main.ts",
     "build": "next build",
     "start": "next start",

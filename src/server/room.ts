@@ -1,6 +1,13 @@
-import { Server, Socket } from "socket.io";
-import { Player } from "@/types/player";
-import { RoomState } from "@/types/RoomState";
+import {
+    Server,
+    Socket
+} from "socket.io";
+import {
+    Player
+} from "@/types/player";
+import {
+    RoomState
+} from "@/types/RoomState";
 
 class Room {
 
@@ -45,8 +52,10 @@ class Room {
         this.io.to(this.roomID).emit("keyboard input", socketID, key);
 
         if (this.players[this.findPlayerIndex(socketID)].status == RoomState.INSPECTION_TIME) {
-            if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
-                if (this.roomStatus == RoomState.INSPECTION_TIME) {
+            const ignoredKeys = new Set([';', 'a', 'y', 'b', 'p', 'q']);
+
+            if (!ignoredKeys.has(key)) {
+                if (this.roomStatus === RoomState.INSPECTION_TIME) {
                     this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                     this.updateGameStatus();
                 }
@@ -54,6 +63,7 @@ class Room {
                 this.io.to(socketID).emit("solve in progress");
                 this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
             }
+
         }
     }
 
@@ -187,4 +197,6 @@ class Room {
     }
 }
 
-export { Room };
+export {
+    Room
+};
