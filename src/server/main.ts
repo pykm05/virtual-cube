@@ -14,14 +14,12 @@ app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: { origin: "*" },
 });
 
-
-app.get('/', (_, res) => {
-  res.send('server running');
+app.get("/", (_, res) => {
+  res.send("server running");
 });
-
 
 server.listen(port, () => {
   console.log(`Server listening on port ${port}`);
@@ -34,18 +32,19 @@ io.on("connection", (socket: Socket) => {
     id: socket.id,
     username: "",
     status: RoomState.GAME_NOT_STARTED,
-    solveTime: 0
+    solveTime: 0,
+    isDNF: false,
   };
 
   let currentRoom: Room | null = null;
   let previousRoomID = "";
 
-  socket.on("initialize player", (username: string) => {
+  socket.on("player:initialize", (username: string) => {
     player.username = username;
-    socket.emit("search room");
+    socket.emit("room:search");
   });
 
-  socket.on("search room", () => {
+  socket.on("room:search", () => {
     if (currentRoom) {
       currentRoom.removePlayer(player.id);
       socket.leave(currentRoom.roomID);
@@ -56,16 +55,15 @@ io.on("connection", (socket: Socket) => {
     }
 
     currentRoom = findOrCreateRoom(previousRoomID);
-    socket.emit("room found", currentRoom.roomID);
+    socket.emit("room:found", currentRoom.roomID);
   });
 
-  socket.on("user joined", () => {
+  socket.on("user:joined", () => {
     if (!currentRoom) {
-      socket.emit("invalid join");
+      socket.emit("join:invalid");
       return;
     }
 
-    // Debugging output
     for (const r of rooms) {
       console.log(`${r.roomID}: ${r.players.length}`);
       if (r.players.length > 2) {
@@ -78,28 +76,22 @@ io.on("connection", (socket: Socket) => {
     currentRoom.addPlayer(socket, player);
   });
 
-  socket.on("keyboard input", (socketID: string, key: string) => {
+  socket.on("keyboard:input", (socketID: string, key: string) => {
     if (!currentRoom) {
-      socket.emit("invalid join");
+      socket.emit("join:invalid");
       return;
     }
 
     currentRoom.handleInput(socketID, key);
   });
 
-  socket.on("new game", (socketID: string) => {
-    if (currentRoom) {
-      currentRoom.removePlayer(socketID);
-    }
-  });
-
-  socket.on("solve complete", (socketID: string) => {
+  socket.on("player:completed_solve", (socketID: string) => {
     if (currentRoom && socket.id === socketID) {
       currentRoom.playerSolveComplete(socketID);
     }
   });
 
-  socket.on("remove player", (socketID: string) => {
+  socket.on("player:remove", (socketID: string) => {
     if (!currentRoom) return;
 
     currentRoom.removePlayer(socketID);
@@ -115,9 +107,8 @@ io.on("connection", (socket: Socket) => {
   });
 });
 
-
 function generateRoomID(length: number): string {
-  return [...Array(length)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+  return [...Array(length)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
 function findOrCreateRoom(prevRoomID: string): Room {
