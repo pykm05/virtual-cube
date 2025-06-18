@@ -14,8 +14,8 @@ Then, in another terminal window, run the webpage
 npm run next
 ```
 
+The program should now be running on http://localhost:3000/play
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

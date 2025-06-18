@@ -35,7 +35,7 @@ export default function GameModal() {
 
     const tied = playerRanks[0].solveTime == playerRanks[1].solveTime;
     const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
-    const oppDNF = opponent.status == RoomState.DNF;
+    const oppDNF = opponent.isDNF;
     const won = (oppDNF || opponent.id == playerRanks[1].id)
 
     return (
