@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { getSocket, Socket } from "@/lib/socket";
 import { Player } from "@/types/player";
-import { RoomState } from "@/types/RoomState";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -14,10 +13,11 @@ export default function GameModal() {
   const [cubeSolved, setCubeSolved] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [playerRanks, setPlayerRanks] = useState<Player[]>([]);
+  const [rematchMessage, setRematchMessage] = useState("");
 
   const router = useRouter();
 
-  function findNewGame() {
+  function joinNewGame() {
     if (!socket || !player) return;
 
     socket.emit("room:search", player.username);
@@ -27,6 +27,20 @@ export default function GameModal() {
       router.push(`../play/${roomID}`);
 
       socket.off("room:found");
+    });
+  }
+
+  function handleRematch() {
+    if (!socket || !player) return;
+
+    socket.emit("room:rematch");
+
+    socket.on("room:rematch_accepted", (roomID) => {
+      socket.emit("room:rematch_join", roomID);
+
+      router.push(`../play/${roomID}`);
+
+      socket.off("room:rematch_accepted");
     });
   }
 
@@ -68,9 +82,16 @@ export default function GameModal() {
           </div>
         </div>
         <div className="flex justify-center items-center gap-[20px] px-3 py-7">
-          <button onClick={findNewGame} className="hover:bg-gray-200 px-9 py-4 border-2 rounded-[10px]">New Game</button>
-          <button className="hover:bg-gray-200 px-9 py-4 border-2 rounded-[10px]">Rematch</button>
+          <button onClick={joinNewGame} className="hover:bg-gray-200 px-9 py-4 border-2 rounded-[10px]">New Game</button>
+          <button onClick={handleRematch} className="hover:bg-gray-200 px-9 py-4 border-2 min-w-[150px] rounded-[10px]">
+            {rematchMessage != "" ? rematchMessage == "Awaiting player response..." ? <>...</> : <>Accept rematch</> : <>Rematch</>}
+          </button>
         </div>
+        {rematchMessage != "" && 
+          <div className="flex justify-center items-center pb-3">
+            {rematchMessage}
+          </div>
+        }
       </div>
     )
   }
@@ -87,7 +108,14 @@ export default function GameModal() {
     socket.on("game:complete", (rankings: Player[]) => {
       setGameComplete(true);
       setPlayerRanks(rankings);
-    })
+    });
+
+    socket.on("room:rematch_pending", (senderID: string) => {
+      if (socket.id == senderID) setRematchMessage("Awaiting player response...");
+      else setRematchMessage("Rematch request received");
+
+      socket.off("room:rematch_pending");
+    });
   }, []);
 
   return (

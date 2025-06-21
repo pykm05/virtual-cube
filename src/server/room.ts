@@ -12,6 +12,7 @@ class Room {
     private solveTime: number = 0;
     private maxPlayerCount = 2;
     private solveTimeLimit: number = 300; // 300
+    private pendingRematch: string[] = [];
     private io: Server;
     private rankings: Player[] = [];
 
@@ -28,7 +29,7 @@ class Room {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
             socket.to(socket.id).emit("join:invalid");
         } else {
-            if (player.username == "") player.username = `an unnamed cuber ${this.players.length + 1}`;
+            if (player.username == "") player.username = "an unnamed cuber";
 
             socket.join(this.roomID);
             this.players.push(player);
@@ -36,7 +37,7 @@ class Room {
         }
     }
 
-    removePlayer(socketID: string) {
+    playerDNF(socketID: string) {
         const playerIndex = this.findPlayerIndex(socketID);
 
         if (playerIndex != -1) {
@@ -46,7 +47,15 @@ class Room {
             this.rankings.push(player);
             this.io.to(socketID).emit("player:completed_solve", player);
         }
+    }
 
+    removePlayer(socketID: string) {
+        const playerIndex = this.findPlayerIndex(socketID);
+
+        if (playerIndex != -1) {
+            const player = this.players[playerIndex];
+            this.players.filter((p) => p.id != player.id);
+        }
     }
 
     handleInput(socketID: string, key: string) {
@@ -97,9 +106,15 @@ class Room {
         }
     }
 
-    // processRematch(socketID: string) {
-    //     if (this.player)
-    // }
+    processRematchRequest(socketID: string) {
+        if (this.pendingRematch.length == this.players.length - 1) {
+            return !this.pendingRematch.some((playerID) => playerID == socketID);
+        } else {
+            this.pendingRematch.push(socketID);
+            this.io.to(this.roomID).emit("room:rematch_pending", socketID);
+            return false;
+        }
+    }
 
     private updateGameStatus() {
         console.log("current room state: ", this.roomStatus);
