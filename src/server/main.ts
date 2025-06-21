@@ -20,7 +20,7 @@ const io = new Server(server, {
     }
 });
 
-app.get('/', (res: Response) => {
+app.get('/', (res: Response) => { 
     res.send('server running');
 });
 
@@ -54,7 +54,38 @@ io.on("connection", (socket: Socket) => {
 
         room = findRoom(room, prevRoomID);
         io.to(socket.id).emit("room:found", room.roomID);
-    })
+    });
+
+    socket.on("room:rematch", () => {
+        if (!room) return;
+
+        const rematchAccepted = room.processRematchRequest(socket.id);
+
+        if (rematchAccepted) {
+            const newRoom = new Room(genRanHex(5), io);
+            Rooms.push(newRoom);
+
+            io.to(room.roomID).emit("room:rematch_accepted", newRoom.roomID);
+        }
+    });
+
+    socket.on("room:rematch_join", (newRoomID: string) => {
+        if (!room) return;
+
+        room.removePlayer(player.id);
+        socket.leave(room.roomID);
+        prevRoomID = room.roomID;
+
+        player.status = RoomState.GAME_NOT_STARTED;
+        player.solveTime = 0;
+
+        for (const r of Rooms) {
+            if (r.roomID == newRoomID) {
+                room = r;
+                break;
+            }
+        };
+    });
 
     socket.on("keyboard:input", (socketID, key) => {
         if (!room) {
@@ -93,12 +124,12 @@ io.on("connection", (socket: Socket) => {
     socket.on("player:remove", (socketID: string) => {
         if (!room) return;
 
-        room.removePlayer(socketID);
+        room.playerDNF(socketID);
         socket.leave(room.roomID);
     });
 
     socket.on("disconnect", () => {
-        if (room) room.removePlayer(player.id);
+        if (room) room.playerDNF(player.id);
 
         console.log('disconnect');
     });

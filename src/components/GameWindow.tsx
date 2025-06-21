@@ -37,11 +37,6 @@ export default function GameWindow() {
     socket.on("game:start", (users: Player[]) => {
       setPlayers(getPlayerOrder(users));
     });
-
-    socket.on("player:remove", (socketID: string) => {
-      // console.log(socketID, "was removed")
-      // setPlayers(players.filter(player => player.id !== socketID));
-    });
   }, []);
 
   useEffect(() => {
@@ -53,7 +48,6 @@ export default function GameWindow() {
       }
     }
 
-    console.log('new render')
   }, [players]);
 
   return (
