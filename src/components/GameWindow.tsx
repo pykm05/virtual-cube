@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useEffect, useState } from "react";
 import { getSocket, getPlayerOrder } from "@/lib/socket";
 import { Cube } from "@/components/three/cube";
@@ -12,18 +12,37 @@ export default function GameWindow() {
   function newScene(container: HTMLElement, assignedSocketID: string) {
     const { scene, renderer, camera } = Scene(container);
     const cube = new Cube(scene, renderer, camera);
-  
+
     const socket = getSocket();
     const emitter = socket.id == assignedSocketID;
-  
-    if (emitter) window.addEventListener("keydown", (e) => socket.emit("keyboard:input", socket.id, e.key));
-  
+
+    if (emitter)
+      window.addEventListener("keydown", async (e) => {
+        // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
+        if (await cube.isSolved()) {
+          return;
+        }
+        socket.emit("keyboard:input", socket.id, e.key);
+      });
+
     socket.on("keyboard:input", async (socketID: string, key: string) => {
-      if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
+      if (
+        (emitter && socket.id == socketID) ||
+        (!emitter && assignedSocketID == socketID)
+      ) {
         cube.handleInput(key);
-  
+
         // long
-        if (emitter && await cube.isSolved() && key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') {
+        if (
+          emitter &&
+          (await cube.isSolved()) &&
+          key != ";" &&
+          key != "a" &&
+          key != "y" &&
+          key != "b" &&
+          key != "p" &&
+          key != "q"
+        ) {
           socket.emit("player:completed_solve", socket.id);
           socket.off("keyboard:input");
         }
@@ -47,20 +66,28 @@ export default function GameWindow() {
         newScene(element, userID);
       }
     }
-
   }, [players]);
 
   return (
     <div className="flex justify-center w-screen h-screen">
-      {players.map((user: Player) => (
-        user && <div key={user.id} className="flex flex-1 flex-col">
-          <div className="flex items-center px-3 w-full gap-[20px]">
-            <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
-            <div>{user.username ? user.username : "an unnamed cuber"}</div>
-          </div>
-          <div id={user.id} className="w-full h-full" />
-        </div>
-      ))}
+      {players.map(
+        (user: Player) =>
+          user && (
+            <div key={user.id} className="flex flex-1 flex-col">
+              <div className="flex items-center px-3 w-full gap-[20px]">
+                <Image
+                  src="/account_circle.svg"
+                  height={75}
+                  width={75}
+                  priority={true}
+                  alt="user icon"
+                />
+                <div>{user.username ? user.username : "an unnamed cuber"}</div>
+              </div>
+              <div id={user.id} className="w-full h-full" />
+            </div>
+          ),
+      )}
     </div>
   );
 }
