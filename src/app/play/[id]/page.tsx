@@ -1,32 +1,31 @@
-"use client"
-import { useEffect} from "react";
-import { useRouter } from "next/navigation";
-import { getSocket } from "@/lib/socket";
-import GameWindow from "@/components/GameWindow";
-import GameHeader from "@/components/GameHeader";
-import GameModal from "@/components/GameModal";
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getSocket } from '@/lib/socket';
+import GameWindow from '@/components/GameWindow';
+import GameHeader from '@/components/GameHeader';
+import GameModal from '@/components/GameModal';
 
 export default function PlayerWindow() {
+    const router = useRouter();
 
-  const router = useRouter();
+    useEffect(() => {
+        const socket = getSocket();
 
-  useEffect(() => {
-    const socket = getSocket();
+        socket.emit('user:joined');
 
-    socket.emit("user:joined");
+        socket.on('join:invalid', () => {
+            router.push('./');
 
-    socket.on("join:invalid", () => {
-      router.push("./");
+            socket.off('join:invalid');
+        });
+    }, []);
 
-      socket.off("join:invalid");
-    });
-  }, []);
-
-  return (
-    <div className="flex flex-col w-screen h-screen">
-      <GameHeader />
-      <GameWindow />
-      <GameModal />
-    </div>
-  );
+    return (
+        <div className="flex flex-col w-screen h-screen">
+            <GameHeader />
+            <GameWindow />
+            <GameModal />
+        </div>
+    );
 }

@@ -1,11 +1,7 @@
 export default function WindowLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-      <div className="flex flex-col w-screen h-screen">
-          {children}
-      </div>
-  );
+    return <div className="flex flex-col w-screen h-screen">{children}</div>;
 }
