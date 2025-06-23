@@ -1,11 +1,10 @@
-import * as THREE from "three";
-import { CubeState, EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from "../../types/cubeTypes";
+import * as THREE from 'three';
+import { CubeState, EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from '../../types/cubeTypes';
 
 class Cube {
-
     public cubeStatus = CubeState.NOT_MOVING;
     static readonly turnSpeed = Math.PI / 10;
-    private moveQueue: Array<{ action: CubeAction, axis: EulerAxis, layer: number, direction: number }> = [];
+    private moveQueue: Array<{ action: CubeAction; axis: EulerAxis; layer: number; direction: number }> = [];
 
     private axis: EulerAxis = 'x';
     private layer = 1;
@@ -15,7 +14,7 @@ class Cube {
     private pivot = new THREE.Object3D();
     private allPieces: THREE.Mesh[] = [];
     private activeGroup: THREE.Mesh[] = [];
-    private fullGroup: THREE.Group = new THREE.Group;
+    private fullGroup: THREE.Group = new THREE.Group();
     private solvedState: { position: THREE.Vector3 }[] = [];
 
     private scene: THREE.Scene;
@@ -35,11 +34,11 @@ class Cube {
             }
         }
 
-        this.solvedState = this.allPieces.map(p => ({
+        this.solvedState = this.allPieces.map((p) => ({
             id: (p as any).pieceId,
             position: p.position.clone(),
         }));
-        
+
         this.render();
 
         this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
@@ -53,7 +52,7 @@ class Cube {
             new THREE.MeshBasicMaterial({ color: 0xffffff }), // Top - White
             new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom - Yellow
             new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Front - Green
-            new THREE.MeshBasicMaterial({ color: 0x0000ff })  // Back - Blue
+            new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Back - Blue
         ];
 
         const piece = new THREE.Mesh(geometry, cubeMaterials);
@@ -85,13 +84,11 @@ class Cube {
         }
 
         this.scene.add(piece);
-
-        
     }
 
     async isSolved() {
         while (this.cubeStatus !== CubeState.NOT_MOVING) {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
         }
 
         const tolerance = 0.001;
@@ -120,45 +117,95 @@ class Cube {
     }
 
     handleInput(e: string) {
-        switch (e) { // params: action type, axis, layer, direction
-            case 'f': this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward); break; // U
-            case 'j': this.addToQueue(CubeAction.turn, 'y', 1, Direction.backward); break; // U'
-            case 's': this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward); break; // D
-            case 'l': this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward); break; // D'
-            case 'i': this.addToQueue(CubeAction.turn, 'x', 1, Direction.backward); break; // R
-            case 'k': this.addToQueue(CubeAction.turn, 'x', 1, Direction.forward); break; // R'
-            case 'd': this.addToQueue(CubeAction.turn, 'x', -1, Direction.forward); break; // L
-            case 'e': this.addToQueue(CubeAction.turn, 'x', -1, Direction.backward); break; // L'
-            case 'h': this.addToQueue(CubeAction.turn, 'z', 1, Direction.backward); break; // F
-            case 'g': this.addToQueue(CubeAction.turn, 'z', 1, Direction.forward); break; // F'
-            case 'w': this.addToQueue(CubeAction.turn, 'z', -1, Direction.forward); break; // B
-            case 'o': this.addToQueue(CubeAction.turn, 'z', -1, Direction.backward); break; // B'
-            case 'x': this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward); break; // M'
-            case '.': this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward); break; // M'
-            case '6': this.addToQueue(CubeAction.turn, 'x', 0, Direction.forward); break; // M
-            case '0': this.addToQueue(CubeAction.turn, 'z', 0, Direction.backward); break; // S
-            case '1': this.addToQueue(CubeAction.turn, 'z', 0, Direction.forward); break; // S'
-            case '2': this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward); break; // E
-            case '9': this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward); break; // E'
+        switch (
+            e // params: action type, axis, layer, direction
+        ) {
+            case 'f':
+                this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
+                break; // U
+            case 'j':
+                this.addToQueue(CubeAction.turn, 'y', 1, Direction.backward);
+                break; // U'
+            case 's':
+                this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
+                break; // D
+            case 'l':
+                this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward);
+                break; // D'
+            case 'i':
+                this.addToQueue(CubeAction.turn, 'x', 1, Direction.backward);
+                break; // R
+            case 'k':
+                this.addToQueue(CubeAction.turn, 'x', 1, Direction.forward);
+                break; // R'
+            case 'd':
+                this.addToQueue(CubeAction.turn, 'x', -1, Direction.forward);
+                break; // L
+            case 'e':
+                this.addToQueue(CubeAction.turn, 'x', -1, Direction.backward);
+                break; // L'
+            case 'h':
+                this.addToQueue(CubeAction.turn, 'z', 1, Direction.backward);
+                break; // F
+            case 'g':
+                this.addToQueue(CubeAction.turn, 'z', 1, Direction.forward);
+                break; // F'
+            case 'w':
+                this.addToQueue(CubeAction.turn, 'z', -1, Direction.forward);
+                break; // B
+            case 'o':
+                this.addToQueue(CubeAction.turn, 'z', -1, Direction.backward);
+                break; // B'
+            case 'x':
+                this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward);
+                break; // M'
+            case '.':
+                this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward);
+                break; // M'
+            case '6':
+                this.addToQueue(CubeAction.turn, 'x', 0, Direction.forward);
+                break; // M
+            case '0':
+                this.addToQueue(CubeAction.turn, 'z', 0, Direction.backward);
+                break; // S
+            case '1':
+                this.addToQueue(CubeAction.turn, 'z', 0, Direction.forward);
+                break; // S'
+            case '2':
+                this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
+                break; // E
+            case '9':
+                this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward);
+                break; // E'
 
             // layer default to 1
-            case ';': this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.backward); break; // y
-            case 'a': this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.forward); break; // y'
-            case 'y': this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.backward); break; // x
-            case 'b': this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.forward); break; // x'
-            case 'p': this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.backward); break; // z
-            case 'q': this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.forward); break; // z'
+            case ';':
+                this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.backward);
+                break; // y
+            case 'a':
+                this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.forward);
+                break; // y'
+            case 'y':
+                this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.backward);
+                break; // x
+            case 'b':
+                this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.forward);
+                break; // x'
+            case 'p':
+                this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.backward);
+                break; // z
+            case 'q':
+                this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.forward);
+                break; // z'
         }
 
         // console.log('cube is', this.isSolved());
     }
 
     private doTurn() {
-        this.pivot.rotation[this.axis] += (this.direction * Cube.turnSpeed);
+        this.pivot.rotation[this.axis] += this.direction * Cube.turnSpeed;
 
-        if (this.pivot.rotation[this.axis] >= ninetyDegrees ||
-            this.pivot.rotation[this.axis] <= -ninetyDegrees
-        ) {
+        if (this.pivot.rotation[this.axis] >= ninetyDegrees || this.pivot.rotation[this.axis] <= -ninetyDegrees) {
             const targetRotation = ninetyDegrees * this.direction;
             this.pivot.rotation[this.axis] = targetRotation;
 
@@ -195,7 +242,7 @@ class Cube {
     }
 
     private doRotation() {
-        this.fullGroup.rotation[this.axis] += (this.direction * Cube.turnSpeed);
+        this.fullGroup.rotation[this.axis] += this.direction * Cube.turnSpeed;
 
         if (Math.abs(this.fullGroup.rotation[this.axis]) >= ninetyDegrees) {
             this.allPieces.forEach((piece) => {

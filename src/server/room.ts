@@ -1,9 +1,8 @@
-import { Server, Socket } from "socket.io";
-import { Player } from "@/types/player";
-import { RoomState } from "@/types/RoomState";
+import { Server, Socket } from 'socket.io';
+import { Player } from '@/types/player';
+import { RoomState } from '@/types/RoomState';
 
 class Room {
-
     public roomID: string;
     public players: Player[] = [];
     public roomStatus = RoomState.GAME_NOT_STARTED;
@@ -27,9 +26,9 @@ class Room {
 
     addPlayer(socket: Socket, player: Player) {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
-            socket.to(socket.id).emit("join:invalid");
+            socket.to(socket.id).emit('join:invalid');
         } else {
-            if (player.username == "") player.username = "an unnamed cuber";
+            if (player.username == '') player.username = 'an unnamed cuber';
 
             socket.join(this.roomID);
             this.players.push(player);
@@ -45,7 +44,7 @@ class Room {
             player.isDNF = true;
             player.status = RoomState.GAME_ENDED;
             this.rankings.push(player);
-            this.io.to(socketID).emit("player:completed_solve", player);
+            this.io.to(socketID).emit('player:completed_solve', player);
         }
     }
 
@@ -59,17 +58,18 @@ class Room {
     }
 
     handleInput(socketID: string, key: string) {
-        this.io.to(this.roomID).emit("keyboard:input", socketID, key);
+        this.io.to(this.roomID).emit('keyboard:input', socketID, key);
         const playerIndex = this.findPlayerIndex(socketID);
 
         if (playerIndex != -1 && this.players[playerIndex].status == RoomState.INSPECTION_TIME) {
-            if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') { // change this to check cubeturn type
+            if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') {
+                // change this to check cubeturn type
                 if (this.roomStatus == RoomState.INSPECTION_TIME) {
                     this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                     this.updateGameStatus();
                 }
 
-                this.io.to(socketID).emit("solve:in_progress");
+                this.io.to(socketID).emit('solve:in_progress');
                 this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
             }
         }
@@ -81,7 +81,7 @@ class Room {
         const player = this.players[this.findPlayerIndex(socketID)];
         player.status = RoomState.GAME_ENDED;
         player.solveTime = Number(player.solveTime.toFixed(2));
-        this.io.to(socketID).emit("player:completed_solve", player);
+        this.io.to(socketID).emit('player:completed_solve', player);
 
         let inserted = false;
 
@@ -95,9 +95,9 @@ class Room {
 
         if (!inserted) this.rankings.push(player);
 
-        if (!this.players.some(player => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
-            console.log("rankings", this.rankings);
-            this.io.to(socketID).emit("game:complete", this.rankings)
+        if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+            console.log('rankings', this.rankings);
+            this.io.to(socketID).emit('game:complete', this.rankings);
         }
 
         if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
@@ -111,42 +111,46 @@ class Room {
             return !this.pendingRematch.some((playerID) => playerID == socketID);
         } else {
             this.pendingRematch.push(socketID);
-            this.io.to(this.roomID).emit("room:rematch_pending", socketID);
+            this.io.to(this.roomID).emit('room:rematch_pending', socketID);
             return false;
         }
     }
 
     private updateGameStatus() {
-        console.log("current room state: ", this.roomStatus);
+        console.log('current room state: ', this.roomStatus);
         switch (this.roomStatus) {
             case RoomState.GAME_NOT_STARTED:
                 if (this.players.length == this.maxPlayerCount) {
                     for (const player of this.players) {
                         if (player.status == RoomState.GAME_NOT_STARTED) {
-                            this.io.to(player.id).emit("game:start", this.players);
-                            player.status = RoomState.INSPECTION_TIME
+                            this.io.to(player.id).emit('game:start', this.players);
+                            player.status = RoomState.INSPECTION_TIME;
                         }
                     }
 
-                    console.log("game start")
+                    console.log('game start');
                     this.roomStatus = RoomState.INSPECTION_TIME;
                     this.updateGameStatus();
                 }
                 break;
             case RoomState.INSPECTION_TIME:
-                this.io.to(this.roomID).emit("inspection:start", RoomState.INSPECTION_TIME);
+                this.io.to(this.roomID).emit('inspection:start', RoomState.INSPECTION_TIME);
 
                 const inspectionTimer = setInterval(() => {
                     this.inspectionTime--;
 
                     for (const player of this.players) {
-                        if (player.status == RoomState.INSPECTION_TIME) this.io.to(player.id).emit("timer:update", this.inspectionTime);
+                        if (player.status == RoomState.INSPECTION_TIME)
+                            this.io.to(player.id).emit('timer:update', this.inspectionTime);
                     }
 
-                    if (this.inspectionTime == 0 || !this.players.some(player => player.status == RoomState.INSPECTION_TIME)) {
+                    if (
+                        this.inspectionTime == 0 ||
+                        !this.players.some((player) => player.status == RoomState.INSPECTION_TIME)
+                    ) {
                         for (const player of this.players) {
                             if (player.status == RoomState.INSPECTION_TIME) {
-                                this.io.to(player.id).emit("solve:in_progress");
+                                this.io.to(player.id).emit('solve:in_progress');
                                 player.status = RoomState.SOLVE_IN_PROGRESS;
                             }
                         }
@@ -167,19 +171,22 @@ class Room {
                     for (const player of this.players) {
                         if (player.status == RoomState.SOLVE_IN_PROGRESS) {
                             player.solveTime += 0.01;
-                            this.io.to(player.id).emit("timer:update", player.solveTime.toFixed(2));
+                            this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
                         }
                     }
 
-                    if (this.solveTime >= this.solveTimeLimit || !this.players.some(player => player.status != RoomState.GAME_ENDED)) {
+                    if (
+                        this.solveTime >= this.solveTimeLimit ||
+                        !this.players.some((player) => player.status != RoomState.GAME_ENDED)
+                    ) {
                         for (const player of this.players) {
                             this.rankings.push(player);
                             player.status = RoomState.GAME_ENDED;
                             player.solveTime = Number(player.solveTime.toFixed(2));
-                            this.io.to(player.id).emit("player:completed_solve", player);
+                            this.io.to(player.id).emit('player:completed_solve', player);
                         }
 
-                        this.io.to(this.roomID).emit("game:complete", this.rankings)
+                        this.io.to(this.roomID).emit('game:complete', this.rankings);
 
                         if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
                             this.roomStatus = RoomState.GAME_ENDED;

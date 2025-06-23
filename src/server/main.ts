@@ -1,11 +1,11 @@
-import express from "express";
-import cors from "cors";
-import { Response } from "express";
-import { Server, Socket } from "socket.io";
-import http from "http";
-import { Room } from "./room.ts";
-import { Player } from "@/types/player.ts";
-import { RoomState } from "@/types/RoomState.ts";
+import express from 'express';
+import cors from 'cors';
+import { Response } from 'express';
+import { Server, Socket } from 'socket.io';
+import http from 'http';
+import { Room } from './room.ts';
+import { Player } from '@/types/player.ts';
+import { RoomState } from '@/types/RoomState.ts';
 
 const app = express();
 const port = 4000;
@@ -16,32 +16,38 @@ app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
-    }
+        origin: '*',
+    },
 });
 
-app.get('/', (res: Response) => { 
+app.get('/', (res: Response) => {
     res.send('server running');
 });
 
 server.listen(port, () => {
-    console.log('connected')
+    console.log('connected');
 });
 
 const Rooms: Room[] = [];
 
-io.on("connection", (socket: Socket) => {
-    let player: Player = { id: socket.id, username: "", status: RoomState.GAME_NOT_STARTED, solveTime: 0, isDNF: false };
+io.on('connection', (socket: Socket) => {
+    let player: Player = {
+        id: socket.id,
+        username: '',
+        status: RoomState.GAME_NOT_STARTED,
+        solveTime: 0,
+        isDNF: false,
+    };
     let room: Room | null;
-    let prevRoomID: string = "";
+    let prevRoomID: string = '';
 
-    socket.on("player:initialize", (username: string) => {
+    socket.on('player:initialize', (username: string) => {
         player.username = username;
 
-        socket.emit("room:search");
+        socket.emit('room:search');
     });
 
-    socket.on("room:search", () => {
+    socket.on('room:search', () => {
         if (room) {
             room.removePlayer(player.id);
             socket.leave(room.roomID);
@@ -53,10 +59,10 @@ io.on("connection", (socket: Socket) => {
         }
 
         room = findRoom(room, prevRoomID);
-        io.to(socket.id).emit("room:found", room.roomID);
+        io.to(socket.id).emit('room:found', room.roomID);
     });
 
-    socket.on("room:rematch", () => {
+    socket.on('room:rematch', () => {
         if (!room) return;
 
         const rematchAccepted = room.processRematchRequest(socket.id);
@@ -65,11 +71,11 @@ io.on("connection", (socket: Socket) => {
             const newRoom = new Room(genRanHex(5), io);
             Rooms.push(newRoom);
 
-            io.to(room.roomID).emit("room:rematch_accepted", newRoom.roomID);
+            io.to(room.roomID).emit('room:rematch_accepted', newRoom.roomID);
         }
     });
 
-    socket.on("room:rematch_join", (newRoomID: string) => {
+    socket.on('room:rematch_join', (newRoomID: string) => {
         if (!room) return;
 
         room.removePlayer(player.id);
@@ -84,27 +90,27 @@ io.on("connection", (socket: Socket) => {
                 room = r;
                 break;
             }
-        };
+        }
     });
 
-    socket.on("keyboard:input", (socketID, key) => {
+    socket.on('keyboard:input', (socketID, key) => {
         if (!room) {
-            io.to(socket.id).emit("join:invalid");
+            io.to(socket.id).emit('join:invalid');
             return;
-        };
+        }
 
         room.handleInput(socketID, key);
     });
 
-    socket.on("user:joined", () => {
+    socket.on('user:joined', () => {
         if (!room) {
-            io.to(socket.id).emit("join:invalid");
+            io.to(socket.id).emit('join:invalid');
             return;
-        };
+        }
 
         // debugging
         for (const room of Rooms) {
-            console.log(`${room.roomID}: ${room.players.length}`)
+            console.log(`${room.roomID}: ${room.players.length}`);
             if (room.players.length > 2) {
                 for (const player of room.players) {
                     console.log(player.id);
@@ -115,20 +121,20 @@ io.on("connection", (socket: Socket) => {
         room.addPlayer(socket, player);
     });
 
-    socket.on("player:completed_solve", (socketID) => {
+    socket.on('player:completed_solve', (socketID) => {
         if (!room) return;
 
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     });
 
-    socket.on("player:remove", (socketID: string) => {
+    socket.on('player:remove', (socketID: string) => {
         if (!room) return;
 
         room.playerDNF(socketID);
         socket.leave(room.roomID);
     });
 
-    socket.on("disconnect", () => {
+    socket.on('disconnect', () => {
         if (room) room.playerDNF(player.id);
 
         console.log('disconnect');
@@ -139,9 +145,11 @@ const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.r
 
 function findRoom(room: Room | null, prevRoomID: string) {
     for (const curr of Rooms) {
-        if (curr.players.length <= curr.getMaxPlayerCount() - 1
-            && prevRoomID != curr.roomID
-            && curr.roomStatus == RoomState.GAME_NOT_STARTED) {
+        if (
+            curr.players.length <= curr.getMaxPlayerCount() - 1 &&
+            prevRoomID != curr.roomID &&
+            curr.roomStatus == RoomState.GAME_NOT_STARTED
+        ) {
             room = curr;
         }
     }
@@ -149,7 +157,7 @@ function findRoom(room: Room | null, prevRoomID: string) {
     if (!room) {
         room = new Room(genRanHex(5), io);
         Rooms.push(room);
-        console.log("room could not be found")
+        console.log('room could not be found');
     }
 
     return room;
