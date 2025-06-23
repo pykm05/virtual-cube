@@ -16,14 +16,20 @@ export default function GameWindow() {
         const socket = getSocket();
         const emitter = socket.id == assignedSocketID;
 
-        window.addEventListener("keydown", async (e) => {
-            // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
-            if (await cube.isSolved()) {
-                return;
-            }
-            socket.emit("keyboard:input", socket.id, e.key);
-        });
-      
+        // Make sure we capture keydows only if the scene is the active player's scene
+        //  Since there is 2 scenes, one for each cube, if we add 2 event listener,
+        //  the check for cube solved will check for the opponent's cube and still send the event
+        if (emitter) {
+            window.addEventListener('keydown', async (e) => {
+                // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
+                if (await cube.isSolved()) {
+                    return;
+                }
+
+                socket.emit('keyboard:input', socket.id, e.key);
+            });
+        }
+
         socket.on('keyboard:input', async (socketID: string, key: string) => {
             if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
                 cube.handleInput(key);
