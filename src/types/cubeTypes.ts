@@ -34,7 +34,7 @@ export function notationFromString(s: string): Notation | null {
     // Why is there no simple way to convert from an enum value to the enum.
     // I know I can just make another big switch but it's ugly too
     // This creates a heap allocation of all the enum variant, it's sooo bad
-    // FIXME: Find a way to take a string "u'" and convert it to Notation.L_PRIME without all this work
+    // FIXME: Find a way to take a string "u'" and convert it to Notation.U_PRIME without all this work
     return (Object.values(Notation) as unknown as string[]).includes(s) ? (s as unknown as Notation) : null;
 }
 
