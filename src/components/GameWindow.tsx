@@ -81,6 +81,7 @@ export default function GameWindow() {
                     console.log(
                         `Received an 'keyboard:input' event but the data could not be parsed to a cube Notation: ${key}`
                     );
+                    return;
                 }
 
                 const notation = maybe_notation!;
