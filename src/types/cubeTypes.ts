@@ -1,5 +1,45 @@
 export type EulerAxis = 'x' | 'y' | 'z';
 
+export type KeybindMap = { [key: string]: Notation };
+
+export enum Notation {
+    U = 'U',
+    U_PRIME = "U'",
+    D = 'D',
+    D_PRIME = "D'",
+    L = 'L',
+    L_PRIME = "L'",
+    R = 'R',
+    R_PRIME = "R'",
+    F = 'F',
+    F_PRIME = "F'",
+    B = 'B',
+    B_PRIME = "B'",
+    M = 'M',
+    M_PRIME = "M'",
+    S = 'S',
+    S_PRIME = "S'",
+    E = 'E',
+    E_PRIME = "E'",
+    x = 'X',
+    x_PRIME = "X'",
+    y = 'Y',
+    y_PRIME = "Y'",
+    z = 'Z',
+    z_PRIME = "Z'",
+}
+
+const notationMap: Record<string, Notation> = Object.values(Notation).reduce(
+    (acc, val) => {
+        acc[val] = val;
+        return acc;
+    },
+    {} as Record<string, Notation>
+);
+export function notationFromString(s: string): Notation | null {
+    return notationMap[s] ?? null;
+}
+
 export enum Direction {
     forward = 1,
     backward = -1,

@@ -4,7 +4,40 @@ import { getSocket, getPlayerOrder } from '@/lib/socket';
 import { Cube } from '@/components/three/cube';
 import Scene from '@/components/three/scene';
 import { Player } from '@/types/player';
+import { Notation, KeybindMap, notationFromString } from '@/types/cubeTypes';
 import Image from 'next/image';
+
+// FIXME: Put that somewhere else
+// prettier-ignore
+// Stop removing the quotes on the keys
+const default_keybinds: KeybindMap = {
+    'f': Notation.U,
+    'j': Notation.U_PRIME,
+    's': Notation.D,
+    'l': Notation.D_PRIME,
+    'i': Notation.R,
+    'k': Notation.R_PRIME,
+    'd': Notation.L,
+    'e': Notation.L_PRIME,
+    'h': Notation.F,
+    'g': Notation.F_PRIME,
+    'w': Notation.B,
+    'o': Notation.B_PRIME,
+    'x': Notation.M_PRIME,
+    '.': Notation.M_PRIME,
+    '6': Notation.M,
+    '0': Notation.S,
+    '1': Notation.S_PRIME,
+    '2': Notation.E,
+    '9': Notation.E_PRIME,
+
+    ';': Notation.y,
+    'a': Notation.y_PRIME,
+    'y': Notation.x,
+    'b': Notation.x_PRIME,
+    'p': Notation.z,
+    'q': Notation.z_PRIME,
+};
 
 export default function GameWindow() {
     const [players, setPlayers] = useState<Player[]>([]);
@@ -16,9 +49,10 @@ export default function GameWindow() {
         const socket = getSocket();
         const emitter = socket.id == assignedSocketID;
 
-        // Make sure we capture keydows only if the scene is the active player's scene
-        //  Since there is 2 scenes, one for each cube, if we add 2 event listener,
-        //  the check for cube solved will check for the opponent's cube and still send the event
+        // Make sure we capture keydowns only if the scene is the active player's scene
+        //     Since there is 2 scenes, one for each cube, if we add 2 event listener,
+        //     the check for is cube solved will check for the opponent's cube and thus send the event
+        // I would have loved to put that call elsewhere, but we need the socket and the cube
         if (emitter) {
             window.addEventListener('keydown', async (e) => {
                 // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
@@ -26,25 +60,43 @@ export default function GameWindow() {
                     return;
                 }
 
-                socket.emit('keyboard:input', socket.id, e.key);
+                const move: Notation | null = default_keybinds[e.key];
+
+                if (move == null) {
+                    console.log(`Key not in the bindmap: ${e.key}`);
+                    return;
+                }
+
+                console.log(`Sending move: ${move}`);
+
+                socket.emit('keyboard:input', socket.id, move);
             });
         }
 
         socket.on('keyboard:input', async (socketID: string, key: string) => {
             if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
-                cube.handleInput(key);
+                const maybe_notation: Notation | null = notationFromString(key);
 
-                // long
-                if (
-                    emitter &&
-                    (await cube.isSolved()) &&
-                    key != ';' &&
-                    key != 'a' &&
-                    key != 'y' &&
-                    key != 'b' &&
-                    key != 'p' &&
-                    key != 'q'
-                ) {
+                if (maybe_notation == null) {
+                    console.log(
+                        `Received an 'keyboard:input' event but the data could not be parsed to a cube Notation: ${key}`
+                    );
+                    return;
+                }
+
+                const notation = maybe_notation!;
+
+                cube.handleInput(notation);
+
+                // prettier-ignore
+                const cube_rotations = [
+                    Notation.x, Notation.x_PRIME,
+                    Notation.y, Notation.y_PRIME,
+                    Notation.z, Notation.z_PRIME,
+                ];
+
+                // Make sure we order the checks from least to most expensive for short circuit evaluation
+                if (emitter && !cube_rotations.includes(notation) && (await cube.isSolved())) {
                     socket.emit('player:completed_solve', socket.id);
                     socket.off('keyboard:input');
                 }

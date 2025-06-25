@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CubeState, EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from '../../types/cubeTypes';
+import { Notation } from '@/types/cubeTypes';
 
 class Cube {
     public cubeStatus = CubeState.NOT_MOVING;
@@ -116,87 +117,82 @@ class Cube {
         return true;
     }
 
-    handleInput(e: string) {
-        switch (
-            e // params: action type, axis, layer, direction
-        ) {
-            case 'f':
+    handleInput(n: Notation) {
+        switch (n) {
+            case Notation.U:
                 this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
-                break; // U
-            case 'j':
+                break;
+            case Notation.U_PRIME:
                 this.addToQueue(CubeAction.turn, 'y', 1, Direction.backward);
-                break; // U'
-            case 's':
+                break;
+            case Notation.D:
                 this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
-                break; // D
-            case 'l':
+                break;
+            case Notation.D_PRIME:
                 this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward);
-                break; // D'
-            case 'i':
+                break;
+            case Notation.R:
                 this.addToQueue(CubeAction.turn, 'x', 1, Direction.backward);
-                break; // R
-            case 'k':
+                break;
+            case Notation.R_PRIME:
                 this.addToQueue(CubeAction.turn, 'x', 1, Direction.forward);
-                break; // R'
-            case 'd':
+                break;
+            case Notation.L:
                 this.addToQueue(CubeAction.turn, 'x', -1, Direction.forward);
-                break; // L
-            case 'e':
+                break;
+            case Notation.L_PRIME:
                 this.addToQueue(CubeAction.turn, 'x', -1, Direction.backward);
-                break; // L'
-            case 'h':
+                break;
+            case Notation.F:
                 this.addToQueue(CubeAction.turn, 'z', 1, Direction.backward);
-                break; // F
-            case 'g':
+                break;
+            case Notation.F_PRIME:
                 this.addToQueue(CubeAction.turn, 'z', 1, Direction.forward);
-                break; // F'
-            case 'w':
+                break;
+            case Notation.B:
                 this.addToQueue(CubeAction.turn, 'z', -1, Direction.forward);
-                break; // B
-            case 'o':
+                break;
+            case Notation.B_PRIME:
                 this.addToQueue(CubeAction.turn, 'z', -1, Direction.backward);
-                break; // B'
-            case 'x':
-                this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward);
-                break; // M'
-            case '.':
-                this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward);
-                break; // M'
-            case '6':
+                break;
+            case Notation.M:
                 this.addToQueue(CubeAction.turn, 'x', 0, Direction.forward);
-                break; // M
-            case '0':
+                break;
+            case Notation.M_PRIME:
+                this.addToQueue(CubeAction.turn, 'x', 0, Direction.backward);
+                break;
+            case Notation.S:
                 this.addToQueue(CubeAction.turn, 'z', 0, Direction.backward);
-                break; // S
-            case '1':
+                break;
+            case Notation.S_PRIME:
                 this.addToQueue(CubeAction.turn, 'z', 0, Direction.forward);
-                break; // S'
-            case '2':
+                break;
+            case Notation.E:
                 this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
-                break; // E
-            case '9':
+                break;
+            case Notation.E_PRIME:
                 this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward);
-                break; // E'
+                break;
 
             // layer default to 1
-            case ';':
+            case Notation.y:
                 this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.backward);
-                break; // y
-            case 'a':
+                break;
+            case Notation.y_PRIME:
                 this.addToQueue(CubeAction.cubeRotation, 'y', 1, Direction.forward);
-                break; // y'
-            case 'y':
+                break;
+            case Notation.x:
                 this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.backward);
-                break; // x
-            case 'b':
+                break;
+            case Notation.x_PRIME:
                 this.addToQueue(CubeAction.cubeRotation, 'x', 1, Direction.forward);
-                break; // x'
-            case 'p':
+                break;
+            case Notation.z:
                 this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.backward);
-                break; // z
-            case 'q':
+                break;
+            case Notation.z_PRIME:
                 this.addToQueue(CubeAction.cubeRotation, 'z', 1, Direction.forward);
-                break; // z'
+                break;
         }
 
         // console.log('cube is', this.isSolved());
