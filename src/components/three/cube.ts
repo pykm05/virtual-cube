@@ -30,7 +30,7 @@ class Cube {
     private renderer: THREE.WebGLRenderer;
     private camera: THREE.Camera;
 
-    constructor(scene: THREE.Scene, renderer: THREE.WebGLRenderer, camera: THREE.Camera) {
+    constructor(scene: THREE.Scene, renderer: THREE.WebGLRenderer, camera: THREE.Camera, scramble?: string) {
         this.scene = scene;
         this.renderer = renderer;
         this.camera = camera;
@@ -47,6 +47,10 @@ class Cube {
             id: (p as any).pieceId,
             position: p.position.clone(),
         }));
+
+        if (scramble) {
+            this.instantScramble(scramble);
+    }
 
         this.render();
     }
@@ -93,19 +97,6 @@ class Cube {
         this.scene.add(piece);
     }
 
-    private waitUntilIdle(): Promise<void> {
-        return new Promise((resolve) => {
-            const check = () => {
-                if (this.cubeStatus === CubeState.NOT_MOVING) {
-                    resolve();
-                } else {
-                    requestAnimationFrame(check);
-                }
-            };
-            check();
-        });
-    }
-
     async isSolved() {
         while (this.cubeStatus !== CubeState.NOT_MOVING) {
             await new Promise((resolve) => setTimeout(resolve, 10));
@@ -136,7 +127,8 @@ class Cube {
         return true;
     }
 
-    async scrambleCube(scramble: string) {
+
+    instantScramble(scramble: string) {
         const moves = scramble.trim().split(/\s+/);
 
         for (const move of moves) {
@@ -149,13 +141,210 @@ class Cube {
                 continue;
             }
 
-            await this.waitUntilIdle();
-            this.handleInput(notation);
-
+            this.instantMove(notation);
             if (double) {
-                await this.waitUntilIdle();
-                this.handleInput(notation);
+                this.instantMove(notation);
             }
+        }
+    }
+
+    private instantMove(n: Notation) {
+        let action: CubeAction;
+        let axis: EulerAxis;
+        let layer: number;
+        let direction: Direction;
+
+        switch (n) {
+            case Notation.U:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            case Notation.U_PRIME:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.D:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = -1;
+                direction = Direction.forward;
+                break;
+            case Notation.D_PRIME:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = -1;
+                direction = Direction.backward;
+                break;
+            case Notation.R:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.R_PRIME:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            case Notation.L:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = -1;
+                direction = Direction.forward;
+                break;
+            case Notation.L_PRIME:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = -1;
+                direction = Direction.backward;
+                break;
+            case Notation.F:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.F_PRIME:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            case Notation.B:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = -1;
+                direction = Direction.forward;
+                break;
+            case Notation.B_PRIME:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = -1;
+                direction = Direction.backward;
+                break;
+            case Notation.M:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = 0;
+                direction = Direction.forward;
+                break;
+            case Notation.M_PRIME:
+                action = CubeAction.turn;
+                axis = 'x';
+                layer = 0;
+                direction = Direction.backward;
+                break;
+            case Notation.S:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = 0;
+                direction = Direction.backward;
+                break;
+            case Notation.S_PRIME:
+                action = CubeAction.turn;
+                axis = 'z';
+                layer = 0;
+                direction = Direction.forward;
+                break;
+            case Notation.E:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = -1;
+                direction = Direction.forward;
+                break;
+            case Notation.E_PRIME:
+                action = CubeAction.turn;
+                axis = 'y';
+                layer = -1;
+                direction = Direction.backward;
+                break;
+            case Notation.y:
+                action = CubeAction.cubeRotation;
+                axis = 'y';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.y_PRIME:
+                action = CubeAction.cubeRotation;
+                axis = 'y';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            case Notation.x:
+                action = CubeAction.cubeRotation;
+                axis = 'x';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.x_PRIME:
+                action = CubeAction.cubeRotation;
+                axis = 'x';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            case Notation.z:
+                action = CubeAction.cubeRotation;
+                axis = 'z';
+                layer = 1;
+                direction = Direction.backward;
+                break;
+            case Notation.z_PRIME:
+                action = CubeAction.cubeRotation;
+                axis = 'z';
+                layer = 1;
+                direction = Direction.forward;
+                break;
+            default:
+                return;
+        }
+
+        this.applyInstantTransform(action, axis, layer, direction);
+    }
+
+    private applyInstantTransform(action: CubeAction, axis: EulerAxis, layer: number, direction: Direction) {
+        const targetRotation = ninetyDegrees * direction;
+
+        if (action === CubeAction.cubeRotation) {
+            const axisVector = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+
+            const quaternion = new THREE.Quaternion();
+            quaternion.setFromAxisAngle(axisVector, targetRotation);
+
+            this.allPieces.forEach((piece) => {
+                piece.position.applyQuaternion(quaternion);
+                piece.quaternion.premultiply(quaternion);
+                piece.rotation.setFromQuaternion(piece.quaternion);
+                this.cubePosition.set(piece, piece.position.clone());
+            });
+        } else {
+            const affectedPieces: THREE.Mesh[] = [];
+
+            this.allPieces.forEach((piece) => {
+                if (nearlyEqual(piece.position[axis], layer)) {
+                    affectedPieces.push(piece);
+                }
+            });
+
+            const axisVector = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+
+            const quaternion = new THREE.Quaternion();
+            quaternion.setFromAxisAngle(axisVector, targetRotation);
+
+            affectedPieces.forEach((piece) => {
+                piece.position.sub(new THREE.Vector3(0, 0, 0)); 
+                piece.position.applyQuaternion(quaternion);
+
+
+                piece.quaternion.premultiply(quaternion);
+                piece.rotation.setFromQuaternion(piece.quaternion);
+
+                this.cubePosition.set(piece, piece.position.clone());
+            });
         }
     }
 

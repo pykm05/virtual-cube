@@ -1,56 +1,36 @@
-
 const movesByAxis = {
-  x: ['L', 'R'] as const,
-  y: ['U', 'D'] as const,
-  z: ['F', 'B'] as const,
-} as const;
+  x: ['L', 'R'],
+  y: ['U', 'D'],
+  z: ['F', 'B'],
+};
 
-type Axis = keyof typeof movesByAxis;
-type Move = typeof movesByAxis[Axis][number];
+const suffixes = ['', "'", '2'];
+const allMoves = [...movesByAxis.x, ...movesByAxis.y, ...movesByAxis.z];
 
-const suffixes = ['', "'", '2'] as const;
-type Suffix = typeof suffixes[number];
-
-
-const allMoves = [...movesByAxis.x, ...movesByAxis.y, ...movesByAxis.z] as const;
-type AllMove = typeof allMoves[number];
-
-
-function getAxis(move: AllMove): Axis {
-  if (movesByAxis.x.includes(move as any)) return 'x';
-  if (movesByAxis.y.includes(move as any)) return 'y';
+function getAxis(move: string): keyof typeof movesByAxis {
+  if (movesByAxis.x.includes(move)) return 'x';
+  if (movesByAxis.y.includes(move)) return 'y';
   return 'z';
 }
 
-
-function getRandom<T extends readonly any[]>(arr: T): T[number] {
+function getRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 export function generate3x3Scramble(length = 20): string {
   const scramble: string[] = [];
-  let lastMove: AllMove | null = null;
-  let lastAxis: Axis | null = null;
-  let secondLastAxis: Axis | null = null;
+  let lastAxis: string | null = null;
+  let lastMove: string | null = null;
 
   while (scramble.length < length) {
     const move = getRandom(allMoves);
     const axis = getAxis(move);
 
-    
-    if (move === lastMove) continue;
+    if (move === lastMove || axis === lastAxis) continue;
 
-    
-    if (axis === lastAxis && axis === secondLastAxis) continue;
-
-    const suffix = getRandom(suffixes);
-
-    scramble.push(move + suffix);
-
-    
-    secondLastAxis = lastAxis;
-    lastAxis = axis;
+    scramble.push(move + getRandom(suffixes));
     lastMove = move;
+    lastAxis = axis;
   }
 
   return scramble.join(' ');

@@ -47,7 +47,9 @@ export default function GameWindow() {
 
     function newScene(container: HTMLElement, assignedSocketID: string) {
         const { scene, renderer, camera } = Scene(container);
-        const cube = new Cube(scene, renderer, camera);
+        const scramble = scrambleBuffer[assignedSocketID];
+        const cube = new Cube(scene, renderer, camera, scramble);
+        delete scrambleBuffer[assignedSocketID];
 
         const socket = getSocket();
         const emitter = socket.id == assignedSocketID;
@@ -56,11 +58,6 @@ export default function GameWindow() {
         //     Since there is 2 scenes, one for each cube, if we add 2 event listener,
         //     the check for is cube solved will check for the opponent's cube and thus send the event
         // I would have loved to put that call elsewhere, but we need the socket and the cube
-        if (scrambleBuffer[assignedSocketID]) {
-            const scramble = scrambleBuffer[assignedSocketID];
-            cube.scrambleCube(scramble);
-            delete scrambleBuffer[assignedSocketID];
-        }
         if (emitter) {
             window.addEventListener('keydown', async (e) => {
                 // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
