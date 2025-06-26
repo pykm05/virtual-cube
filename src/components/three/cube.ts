@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { CubeState, EulerAxis, Direction, CubeAction, ninetyDegrees, nearlyEqual } from '../../types/cubeTypes';
+import {
+    CubeState,
+    EulerAxis,
+    Direction,
+    CubeAction,
+    ninetyDegrees,
+    nearlyEqual,
+    notationFromString,
+} from '../../types/cubeTypes';
 import { Notation } from '@/types/cubeTypes';
 
 class Cube {
@@ -41,8 +49,6 @@ class Cube {
         }));
 
         this.render();
-
-        this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
     }
 
     private createPiece(i: number, j: number, k: number) {
@@ -87,6 +93,19 @@ class Cube {
         this.scene.add(piece);
     }
 
+    private waitUntilIdle(): Promise<void> {
+        return new Promise((resolve) => {
+            const check = () => {
+                if (this.cubeStatus === CubeState.NOT_MOVING) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        });
+    }
+
     async isSolved() {
         while (this.cubeStatus !== CubeState.NOT_MOVING) {
             await new Promise((resolve) => setTimeout(resolve, 10));
@@ -115,6 +134,29 @@ class Cube {
         }
 
         return true;
+    }
+
+    async scrambleCube(scramble: string) {
+        const moves = scramble.trim().split(/\s+/);
+
+        for (const move of moves) {
+            const double = move.endsWith('2');
+            const baseMove = double ? move.slice(0, -1) : move;
+            const notation = notationFromString(baseMove);
+
+            if (!notation) {
+                console.warn(`Invalid move notation: ${move}`);
+                continue;
+            }
+
+            await this.waitUntilIdle();
+            this.handleInput(notation);
+
+            if (double) {
+                await this.waitUntilIdle();
+                this.handleInput(notation);
+            }
+        }
     }
 
     handleInput(n: Notation) {
