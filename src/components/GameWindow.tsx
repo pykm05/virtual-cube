@@ -4,13 +4,12 @@ import { getSocket, getPlayerOrder } from '@/lib/socket';
 import { Cube } from '@/components/three/cube';
 import Scene from '@/components/three/scene';
 import { Player } from '@/types/player';
-import { Notation, KeybindMap, notationFromString } from '@/types/cubeTypes';
+import { Notation, KeybindMap, notationFromString, isCubeRotation } from '@/types/cubeTypes';
 import Image from 'next/image';
 
 // FIXME: Put that somewhere else
 // prettier-ignore
 // Stop removing the quotes on the keys
-
 const default_keybinds: KeybindMap = {
     'f': Notation.U,
     'j': Notation.U_PRIME,
@@ -93,15 +92,8 @@ export default function GameWindow() {
 
                 cube.handleInput(notation);
 
-                // prettier-ignore
-                const cube_rotations = [
-                    Notation.x, Notation.x_PRIME,
-                    Notation.y, Notation.y_PRIME,
-                    Notation.z, Notation.z_PRIME,
-                ];
-
                 // Make sure we order the checks from least to most expensive for short circuit evaluation
-                if (emitter && !cube_rotations.includes(notation) && (await cube.isSolved())) {
+                if (emitter && !isCubeRotation(notation) && (await cube.isSolved())) {
                     socket.emit('player:completed_solve', socket.id);
                     socket.off('keyboard:input');
                 }
