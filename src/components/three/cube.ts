@@ -492,7 +492,7 @@ class Cube {
     }
 
     private updateCubeStatus() {
-        if (this.cubeStatus == CubeState.NOT_MOVING && this.moveQueue.length > 0) {
+        if (this.moveQueue.length > 0 && this.cubeStatus == CubeState.NOT_MOVING) {
             const move = this.moveQueue.pop();
 
             if (!move) return;
@@ -501,7 +501,6 @@ class Cube {
             this.setActiveGroup(action, axis, layer, direction);
 
             this.cubeStatus = CubeState.MOVE_IN_PROGRESS; // triggers doTurn() or doRotation() in render()
-            this.updateCubeStatus();
         }
     }
 
@@ -542,6 +541,7 @@ class Cube {
     }
 
     private render() {
+        this.updateCubeStatus();
         if (this.cubeStatus == CubeState.MOVE_IN_PROGRESS) {
             this.action == CubeAction.turn ? this.doTurn() : this.doRotation();
         }
