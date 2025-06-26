@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { Player } from '@/types/player';
 import { RoomState } from '@/types/RoomState';
 import { generate3x3Scramble } from './lib/utils';
+import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
 
 class Room {
     public roomID: string;
@@ -63,9 +64,14 @@ class Room {
         this.io.to(this.roomID).emit('keyboard:input', socketID, key);
         const playerIndex = this.findPlayerIndex(socketID);
 
+        const notation = notationFromString(key);
+        if (!notation) {
+            console.log(`Failed to handle input '${key}': Invalid notation'`);
+            return;
+        }
+
         if (playerIndex != -1 && this.players[playerIndex].status == RoomState.INSPECTION_TIME) {
-            if (key != ';' && key != 'a' && key != 'y' && key != 'b' && key != 'p' && key != 'q') {
-                // change this to check cubeturn type
+            if (!isCubeRotation(notation)) {
                 if (this.roomStatus == RoomState.INSPECTION_TIME) {
                     this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
                     this.updateGameStatus();

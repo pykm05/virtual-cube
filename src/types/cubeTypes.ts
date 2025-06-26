@@ -29,6 +29,16 @@ export enum Notation {
     z_PRIME = "Z'",
 }
 
+// prettier-ignore
+const cubeRotations = [
+    Notation.x, Notation.x_PRIME,
+    Notation.y, Notation.y_PRIME,
+    Notation.z, Notation.z_PRIME,
+];
+export function isCubeRotation(notation: Notation): boolean {
+    return cubeRotations.includes(notation);
+}
+
 const notationMap: Record<string, Notation> = Object.values(Notation).reduce(
     (acc, val) => {
         acc[val] = val;
