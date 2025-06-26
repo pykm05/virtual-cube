@@ -1,11 +1,13 @@
 import { Server, Socket } from 'socket.io';
 import { Player } from '@/types/player';
 import { RoomState } from '@/types/RoomState';
+import { generate3x3Scramble } from './lib/utils';
 
 class Room {
     public roomID: string;
     public players: Player[] = [];
     public roomStatus = RoomState.GAME_NOT_STARTED;
+    public scramble: string = generate3x3Scramble();
 
     private inspectionTime = 15;
     private solveTime: number = 0;
@@ -123,7 +125,8 @@ class Room {
                 if (this.players.length == this.maxPlayerCount) {
                     for (const player of this.players) {
                         if (player.status == RoomState.GAME_NOT_STARTED) {
-                            this.io.to(player.id).emit('game:start', this.players);
+                            console.log(this.scramble);
+                            this.io.to(player.id).emit('game:start', this.players, this.scramble);
                             player.status = RoomState.INSPECTION_TIME;
                         }
                     }

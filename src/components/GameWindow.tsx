@@ -10,6 +10,7 @@ import Image from 'next/image';
 // FIXME: Put that somewhere else
 // prettier-ignore
 // Stop removing the quotes on the keys
+
 const default_keybinds: KeybindMap = {
     'f': Notation.U,
     'j': Notation.U_PRIME,
@@ -39,12 +40,16 @@ const default_keybinds: KeybindMap = {
     'q': Notation.z_PRIME,
 };
 
+const scrambleBuffer: Record<string, string> = {};
+
 export default function GameWindow() {
     const [players, setPlayers] = useState<Player[]>([]);
 
     function newScene(container: HTMLElement, assignedSocketID: string) {
         const { scene, renderer, camera } = Scene(container);
-        const cube = new Cube(scene, renderer, camera);
+        const scramble = scrambleBuffer[assignedSocketID];
+        const cube = new Cube(scene, renderer, camera, scramble);
+        delete scrambleBuffer[assignedSocketID];
 
         const socket = getSocket();
         const emitter = socket.id == assignedSocketID;
@@ -107,7 +112,10 @@ export default function GameWindow() {
     useEffect(() => {
         const socket = getSocket();
 
-        socket.on('game:start', (users: Player[]) => {
+        socket.on('game:start', (users: Player[], scramble: string) => {
+            for (let user of users) {
+                scrambleBuffer[user.id] = scramble;
+            }
             setPlayers(getPlayerOrder(users));
         });
     }, []);
