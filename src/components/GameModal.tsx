@@ -33,8 +33,6 @@ export default function GameModal() {
         socket.on('room:found', (roomID) => {
             console.log('now joining room ', roomID);
             router.push(`../play/${roomID}`);
-
-            socket.off('room:found');
         });
     }
 
@@ -47,8 +45,6 @@ export default function GameModal() {
             socket.emit('room:rematch_join', roomID);
 
             router.push(`../play/${roomID}`);
-
-            socket.off('room:rematch_accepted');
         });
     }
 
@@ -138,7 +134,11 @@ export default function GameModal() {
         });
 
         return () => {
+            socket.off('player:completed_solve');
+            socket.off('game:complete');
             socket.off('room:rematch_pending');
+            socket.off('room:rematch_accepted');
+            socket.off('room:found');
         }
     }, []);
 
