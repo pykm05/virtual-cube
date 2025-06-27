@@ -14,7 +14,7 @@ class Room {
     private solveTime: number = 0;
     private maxPlayerCount = 2;
     private solveTimeLimit: number = 300; // 300
-    private pendingRematch: string[] = [];
+    private rematchQueue: string[] = [];
     private io: Server;
     private rankings: Player[] = [];
 
@@ -115,13 +115,21 @@ class Room {
     }
 
     processRematchRequest(socketID: string) {
-        if (this.pendingRematch.length == this.players.length - 1) {
-            return !this.pendingRematch.some((playerID) => playerID == socketID);
-        } else {
-            this.pendingRematch.push(socketID);
-            this.io.to(this.roomID).emit('room:rematch_pending', socketID);
-            return false;
+        let isQueued = this.rematchQueue.some((playerID) => playerID == socketID);
+
+        // If current player is the last one needed for rematch, intialize rematch
+        if (!isQueued && this.rematchQueue.length == this.players.length - 1) {
+            return true;
         }
+
+        // If player is already queued to rematch and clicks rematch again, remove from queue
+        isQueued ? this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID) : this.rematchQueue.push(socketID);
+        isQueued = !isQueued;
+
+        this.io.to(this.roomID).emit('room:rematch_pending', socketID, { queueSize: this.rematchQueue.length, playerCount: this.players.length } , isQueued);
+
+        return false;
+
     }
 
     private updateGameStatus() {
