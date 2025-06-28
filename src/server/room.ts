@@ -184,8 +184,16 @@ class Room {
                         }
                     }
 
+                    // handle times up situation
+                    if(this.solveTime >= this.solveTimeLimit) {
+                        for (const player of this.players) {
+                            if (player.status === RoomState.SOLVE_IN_PROGRESS) {
+                                this.playerDNF(player.id)
+                            }
+                        }
+                    }
+
                     if (
-                        this.solveTime >= this.solveTimeLimit ||
                         !this.players.some((player) => player.status != RoomState.GAME_ENDED)
                     ) {
                         for (const player of this.players) {
