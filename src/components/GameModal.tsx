@@ -4,10 +4,14 @@ import { getSocket, Socket } from '@/lib/socket';
 import { Player } from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-
+    
 type RematchInfo = {
     queueSize: number,
     playerCount: number
+}
+
+const checkAllPlayersDNF = (players: Player[]) => {
+    return players.every((player) => player.isDNF)
 }
 
 export default function GameModal() {
@@ -55,7 +59,8 @@ export default function GameModal() {
     function displayResults() {
         if (!player) return;
 
-        const tied = playerRanks[0].solveTime == playerRanks[1].solveTime;
+        const allPlayersDNF = checkAllPlayersDNF(playerRanks);
+        const tied = allPlayersDNF || playerRanks[0].solveTime == playerRanks[1].solveTime;
         const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
         const oppDNF = opponent.isDNF;
         const won = oppDNF || opponent.id == playerRanks[1].id;
@@ -86,7 +91,7 @@ export default function GameModal() {
                     <div className="flex flex-1 flex-col items-center">
                         <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
                         <div>{player.username}</div>
-                        <div>{player.solveTime}</div>
+                        <div>{player.isDNF ? 'DNF' : player.solveTime}</div>
                     </div>
                 </div>
                 <div className="flex justify-center items-center gap-[10px] px-3 py-3">
