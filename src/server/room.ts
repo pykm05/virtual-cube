@@ -180,15 +180,12 @@ class Room {
                     for (const player of this.players) {
                         if (player.status == RoomState.SOLVE_IN_PROGRESS) {
                             player.solveTime += 0.01;
-                            this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
-                        }
-                    }
 
-                    // handle times up situation
-                    if(this.solveTime >= this.solveTimeLimit) {
-                        for (const player of this.players) {
-                            if (player.status === RoomState.SOLVE_IN_PROGRESS) {
-                                this.playerDNF(player.id)
+                            this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
+
+                            
+                            if(player.solveTime >= this.solveTimeLimit) {
+                                this.playerDNF(player.id);
                             }
                         }
                     }
