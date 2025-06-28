@@ -47,12 +47,10 @@ class Cube {
             id: (p as any).pieceId,
             position: p.position.clone(),
         }));
-
-        this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
-
-    //     if (scramble) {
-    //         this.instantScramble(scramble);
-    // }
+        
+        if (scramble) {
+            this.instantScramble(scramble);
+        }
 
         this.render();
     }
