@@ -5,13 +5,23 @@ import { Player } from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
+type RematchInfo = {
+    queueSize: number,
+    playerCount: number
+}
+
 export default function GameModal() {
     const [socket, setSocket] = useState<Socket>();
     const [player, setplayer] = useState<Player>();
     const [cubeSolved, setCubeSolved] = useState(false);
     const [gameComplete, setGameComplete] = useState(false);
     const [playerRanks, setPlayerRanks] = useState<Player[]>([]);
+
     const [rematchMessage, setRematchMessage] = useState('');
+    const [rematchInfo, setRematchInfo] = useState<RematchInfo>({
+        queueSize: 0,
+        playerCount: 0
+    });
 
     const router = useRouter();
 
@@ -79,26 +89,28 @@ export default function GameModal() {
                         <div>{player.solveTime}</div>
                     </div>
                 </div>
-                <div className="flex justify-center items-center gap-[20px] px-3 py-7">
+                <div className="flex justify-center items-center gap-[10px] px-3 py-3">
                     <button onClick={joinNewGame} className="hover:bg-gray-200 px-9 py-4 border-2 rounded-[10px]">
                         New Game
                     </button>
                     <button
                         onClick={handleRematch}
-                        className="hover:bg-gray-200 px-9 py-4 border-2 min-w-[150px] rounded-[10px]"
+                        className="hover:bg-gray-200 px-3 py-4 border-2 min-w-[150px] rounded-[10px]"
                     >
                         {rematchMessage != '' ? (
                             rematchMessage == 'Awaiting player response...' ? (
-                                <>...</>
+                                <>cancel</>
                             ) : (
-                                <>Accept rematch</>
+                                <div>
+                                    Accept rematch ({rematchInfo.queueSize}/{rematchInfo.playerCount})
+                                </div>
                             )
                         ) : (
                             <>Rematch</>
                         )}
                     </button>
                 </div>
-                {rematchMessage != '' && <div className="flex justify-center items-center pb-3">{rematchMessage}</div>}
+                <div className="flex justify-center items-center pb-2 min-h-[40px]">{rematchMessage}</div>
             </div>
         );
     }
@@ -117,12 +129,17 @@ export default function GameModal() {
             setPlayerRanks(rankings);
         });
 
-        socket.on('room:rematch_pending', (senderID: string) => {
-            if (socket.id == senderID) setRematchMessage('Awaiting player response...');
-            else setRematchMessage('Rematch request received');
+        socket.on('room:rematch_pending', (senderID: string, roomInfo: RematchInfo, isQueued) => {
+            if (senderID == socket.id && isQueued) setRematchMessage('Awaiting player response...');
+            else if (roomInfo.queueSize > 0) setRematchMessage('Rematch request received');
+            else setRematchMessage('');
 
-            socket.off('room:rematch_pending');
+            setRematchInfo(roomInfo);
         });
+
+        return () => {
+            socket.off('room:rematch_pending');
+        }
     }, []);
 
     return cubeSolved ? (
