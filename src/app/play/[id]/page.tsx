@@ -12,11 +12,10 @@ export default function PlayerWindow() {
     useEffect(() => {
         const socket = getSocket();
 
-        socket.emit('user:joined');
+        socket.emit('room:joined', window.location.pathname.split('/').pop() || '');
 
         socket.on('join:invalid', () => {
             router.push('./');
-
             socket.off('join:invalid');
         });
     }, []);

@@ -1,10 +1,10 @@
 import { Server, Socket } from 'socket.io';
-import { Player } from '@/types/player';
+import Player from '@/types/player';
 import { RoomState } from '@/types/RoomState';
 import { generate3x3Scramble } from './lib/utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
 
-class Room {
+export default class Room {
     public roomID: string;
     public players: Player[] = [];
     public roomStatus = RoomState.GAME_NOT_STARTED;
@@ -23,23 +23,27 @@ class Room {
         this.roomID = roomID;
     }
 
-    getMaxPlayerCount() {
+    public getMaxPlayerCount() {
         return this.maxPlayerCount;
     }
 
-    addPlayer(socket: Socket, player: Player) {
+    public startGame() {
+        this.updateGameStatus();
+    }                  
+
+    public addPlayer(socket: Socket, player: Player) {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
             socket.to(socket.id).emit('join:invalid');
         } else {
-            if (player.username == '') player.username = 'an unnamed cuber';
-
-            socket.join(this.roomID);
             this.players.push(player);
-            this.updateGameStatus();
         }
     }
 
-    playerDNF(socketID: string) {
+    public removePlayer(socketID: string) {
+        this.players = this.players.filter((p) => p.id !== socketID);
+    }
+
+    public playerDNF(socketID: string) {
         const playerIndex = this.findPlayerIndex(socketID);
 
         if (playerIndex != -1) {
@@ -51,16 +55,7 @@ class Room {
         }
     }
 
-    removePlayer(socketID: string) {
-        const playerIndex = this.findPlayerIndex(socketID);
-
-        if (playerIndex != -1) {
-            const player = this.players[playerIndex];
-            this.players.filter((p) => p.id != player.id);
-        }
-    }
-
-    handleInput(socketID: string, key: string) {
+    public handleInput(socketID: string, key: string) {
         this.io.to(this.roomID).emit('keyboard:input', socketID, key);
         const playerIndex = this.findPlayerIndex(socketID);
 
@@ -83,7 +78,7 @@ class Room {
         }
     }
 
-    playerSolveComplete(socketID: string) {
+    public playerSolveComplete(socketID: string) {
         if (this.rankings.some((player) => player.id == socketID)) return;
 
         const player = this.players[this.findPlayerIndex(socketID)];
@@ -114,7 +109,7 @@ class Room {
         }
     }
 
-    processRematchRequest(socketID: string) {
+    public processRematchRequest(socketID: string) {
         let isQueued = this.rematchQueue.some((playerID) => playerID == socketID);
 
         // If current player is the last one needed for rematch, intialize rematch
@@ -157,7 +152,7 @@ class Room {
                     this.inspectionTime--;
 
                     for (const player of this.players) {
-                        if (player.status == RoomState.INSPECTION_TIME)
+                        if (player.status == RoomState.INSPECTION_TIME) 
                             this.io.to(player.id).emit('timer:update', this.inspectionTime);
                     }
 
@@ -241,5 +236,3 @@ class Room {
         return -1;
     }
 }
-
-export { Room };

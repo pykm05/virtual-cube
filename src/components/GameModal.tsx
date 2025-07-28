@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getSocket, Socket } from '@/lib/socket';
-import { Player } from '@/types/player';
+import Player from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
     
@@ -32,12 +32,11 @@ export default function GameModal() {
     function joinNewGame() {
         if (!socket || !player) return;
 
-        socket.emit('room:search', player.username);
+        socket.emit('room:join');
 
         socket.on('room:found', (roomID) => {
-            console.log('now joining room ', roomID);
-            router.push(`../play/${roomID}`);
-
+            console.log('Now joining room ', roomID);
+            router.push(`/play/${roomID}`);
             socket.off('room:found');
         });
     }
@@ -141,10 +140,6 @@ export default function GameModal() {
 
             setRematchInfo(roomInfo);
         });
-
-        return () => {
-            socket.off('room:rematch_pending');
-        }
     }, []);
 
     return cubeSolved ? (
