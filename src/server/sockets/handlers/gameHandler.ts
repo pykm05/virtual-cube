@@ -73,10 +73,8 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         if (!room) {
             let newRoomID = genRanHex(5);
 
-            for (const r of deps['rooms']) {
-                if (r.roomID === newRoomID) {
-                    newRoomID = genRanHex(5);
-                }
+            while (deps['rooms'].some(r => r.roomID === newRoomID)) {
+                newRoomID = genRanHex(5);
             }
 
             room = new Room(newRoomID, io);
@@ -109,7 +107,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             console.log('Room not found');
             io.to(socket.id).emit('join:invalid');
             return;
-        }  
+        }
 
         // Starts game only if required number of players have joined
         room.startGame();
@@ -133,17 +131,15 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             console.log('Room not found');
             io.to(socket.id).emit('join:invalid');
             return;
-        }  
+        }
 
         const rematchRequirementsMet = room.processRematchRequest(socket.id);
 
         if (rematchRequirementsMet) {
             let newRoomID = genRanHex(5);
 
-            for (const r of deps['rooms']) {
-                if (r.roomID === newRoomID) {
-                    newRoomID = genRanHex(5);
-                }
+            while (deps['rooms'].some(r => r.roomID === newRoomID)) {
+                newRoomID = genRanHex(5);
             }
 
             const newRoom = new Room(newRoomID, io);

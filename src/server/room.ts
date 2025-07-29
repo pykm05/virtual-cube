@@ -28,6 +28,8 @@ export default class Room {
     }
 
     public startGame() {
+        if (this.roomStatus !== RoomState.GAME_NOT_STARTED) return;
+
         this.updateGameStatus();
     }                  
 
