@@ -57,31 +57,43 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         // if user is already in a room, leave that room first
         let currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+
         if (currentRoom) {
             currentRoom.removePlayer(player.id);
             socket.leave(currentRoom.roomID);
             player.status = RoomState.GAME_NOT_STARTED;
             player.solveTime = 0;
             player.isDNF = false;
-
         }
 
         // Join a room that has space and hasn't started yet
         let room = deps['rooms'].find((r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED);
 
         // If no room found, create a new one
-        if (!room) room = new Room(genRanHex(5), io);
+        if (!room) {
+            let newRoomID = genRanHex(5);
+
+            for (const r of deps['rooms']) {
+                if (r.roomID === newRoomID) {
+                    newRoomID = genRanHex(5);
+                }
+            }
+
+            room = new Room(newRoomID, io);
+        }
 
         deps['rooms'].push(room);
         socket.join(room.roomID);
         room.addPlayer(socket, player);
+
+        // Push players to room route
         io.to(socket.id).emit('room:found', room.roomID);
     }
 
 
 
     /*
-    Attempt to start the game when a new player has joined a room
+    Attempts to start the game when a player successfully joins the room
     */
     function roomJoined(roomID: string) {
         const room = deps['rooms'].find((r) => r.roomID === roomID);
@@ -108,16 +120,36 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Process rematch request
     */
     function processRematchRequest() {
-        let room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const player = deps['players'].find((p) => p.id === socket.id);
 
-        if (!room) return;
+        if (!player) {
+            console.log('Player not found');
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }
 
-        const rematchAccepted = room.processRematchRequest(socket.id);
+        if (!room) {
+            console.log('Room not found');
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }  
 
-        if (rematchAccepted) {
-            const newRoom = new Room(genRanHex(5), io);
+        const rematchRequirementsMet = room.processRematchRequest(socket.id);
+
+        if (rematchRequirementsMet) {
+            let newRoomID = genRanHex(5);
+
+            for (const r of deps['rooms']) {
+                if (r.roomID === newRoomID) {
+                    newRoomID = genRanHex(5);
+                }
+            }
+
+            const newRoom = new Room(newRoomID, io);
             deps['rooms'].push(newRoom);
 
+            // Move all players from old room to new room
             io.to(room.roomID).emit('room:rematch_accepted', newRoom.roomID);
         }
     }
@@ -125,33 +157,32 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
 
     function joinRematchRoom(newRoomID: string) {
-        let room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const newRoom = deps['rooms'].find((r) => r.roomID === newRoomID);
+        const player = deps['players'].find((p) => p.id === socket.id);
 
-        if (!room) {
+        if (!currentRoom || !newRoom) {
             console.log('Misdirected input, no room found');
             io.to(socket.id).emit('join:invalid');
             return;
         }
 
-        const player = deps['players'].find((p) => p.id === socket.id);
         if (!player) {
             io.to(socket.id).emit('join:invalid');
             return;
         }
 
-        room.removePlayer(player.id);
-        socket.leave(room.roomID);
-        // player.prevRoomID = room.roomID;
-
+        currentRoom.removePlayer(player.id);
+        socket.leave(currentRoom.roomID);
         player.status = RoomState.GAME_NOT_STARTED;
         player.solveTime = 0;
+        player.isDNF = false;
 
-        for (const r of deps['rooms']) {
-            if (r.roomID === newRoomID) {
-                room = r;
-                break;
-            }
-        }
+        socket.join(newRoom.roomID);
+        newRoom.addPlayer(socket, player);
+
+        // Push players to room route
+        io.to(socket.id).emit('room:found', newRoom.roomID);
     }
 
 
