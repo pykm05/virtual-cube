@@ -32,27 +32,13 @@ export default function GameModal() {
     function joinNewGame() {
         if (!socket || !player) return;
 
-        socket.emit('room:join');
-
-        socket.on('room:found', (roomID) => {
-            console.log('Now joining room ', roomID);
-            router.push(`/play/${roomID}`);
-            socket.off('room:found');
-        });
+        socket.emit('room:join_random');
     }
 
     function handleRematch() {
         if (!socket || !player) return;
 
-        socket.emit('room:rematch');
-
-        socket.on('room:rematch_accepted', (roomID) => {
-            socket.emit('room:rematch_join', roomID);
-
-            router.push(`../play/${roomID}`);
-
-            socket.off('room:rematch_accepted');
-        });
+        socket.emit('room:join_specific');
     }
 
     function displayResults() {
@@ -131,6 +117,12 @@ export default function GameModal() {
         socket.on('game:complete', (rankings: Player[]) => {
             setGameComplete(true);
             setPlayerRanks(rankings);
+        });
+
+        socket.on('room:found', (roomID) => {
+            console.log('Now joining room ', roomID);
+            router.push(`/play/${roomID}`);
+            socket.off('room:found');
         });
 
         socket.on('room:rematch_pending', (senderID: string, roomInfo: RematchInfo, isQueued) => {

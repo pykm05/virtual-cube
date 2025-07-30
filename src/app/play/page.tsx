@@ -14,13 +14,13 @@ export default function PlayHome() {
         socket.emit('player:initialize', username);
 
         socket.on('player:initialized', () => {
-            socket.emit('room:join');
+            socket.emit('room:join_random');
             socket.off('player:initialized');
         });
 
         socket.on('room:found', (roomID) => {
             console.log('Now joining room ', roomID);
-            router.push(`play/${roomID}`);
+            router.push(`../play/${roomID}`);
             socket.off('room:found');
         });
     }

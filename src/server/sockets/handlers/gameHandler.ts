@@ -3,17 +3,15 @@ import Room from '@/server/room.ts';
 import Player from '@/types/player.ts';
 import { RoomState } from '@/types/RoomState.ts';
 import { genRanHex } from '@/server/lib/utils.ts';
-
 export default function initializeGameHandlers(io: Server, socket: Socket) {
-
+    
     /*
     Setup event listeners for the socket
     */
     socket.on('player:initialize', (username: string) => initializePlayer(username));
-    socket.on('room:join', () => joinRoom());
+    socket.on('room:join_random', () => joinRandomRoom());
+    socket.on('room:join_specific', () => joinSpecificRoom());
     socket.on('room:joined', (roomID: string) => roomJoined(roomID));
-    socket.on('room:rematch', () => processRematchRequest());
-    socket.on('room:rematch_join', (newRoomID: string) => joinRematchRoom(newRoomID));
     socket.on('keyboard:input', (socketID: string, key: string) => handleKeyboardInput(socketID, key));
     socket.on('player:completed_solve', (socketID) => handleSolveComplete(socketID));
     socket.on('disconnect', () => disconnectPlayer());
@@ -45,25 +43,15 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
     /*
     Search for a room to join and return its roomID
+    Does not add the player to the room yet, that is done in roomJoined function
     */
-    function joinRoom() {
+    function joinRandomRoom() {
         const player = deps['players'].find((p) => p.id === socket.id);
 
         if (!player) {
             console.log('No player found');
             io.to(socket.id).emit('join:invalid');
             return;
-        }
-
-        // if user is already in a room, leave that room first
-        let currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
-
-        if (currentRoom) {
-            currentRoom.removePlayer(player.id);
-            socket.leave(currentRoom.roomID);
-            player.status = RoomState.GAME_NOT_STARTED;
-            player.solveTime = 0;
-            player.isDNF = false;
         }
 
         // Join a room that has space and hasn't started yet
@@ -81,17 +69,59 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
 
         deps['rooms'].push(room);
-        socket.join(room.roomID);
-        room.addPlayer(socket, player);
 
         // Push players to room route
         io.to(socket.id).emit('room:found', room.roomID);
     }
 
 
+    /*
+    Essentially a room rematch handler; send all players in the room to a new room if all players accept the rematch
+    */
+    function joinSpecificRoom() {
+        const room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const player = deps['players'].find((p) => p.id === socket.id);
+
+        if (!player) {
+            console.log('Player not found');
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }
+
+        if (!room) {
+            console.log('Room not found');
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }
+
+        const allPlayersAccepted = room.processRematchRequest(socket.id);
+
+        if (allPlayersAccepted) {
+            console.log('Rematch accepted by all players, creating new room');
+            let newRoom = deps['rooms'].find((r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED);
+
+            // If no room found, create a new one
+            if (!newRoom) {
+                let newRoomID = genRanHex(5);
+
+                while (deps['rooms'].some(r => r.roomID === newRoomID)) {
+                    newRoomID = genRanHex(5);
+                }
+
+                newRoom = new Room(newRoomID, io);
+            }
+
+            deps['rooms'].push(newRoom);
+
+            // Push players to room route
+            io.to(room.roomID).emit('room:found', newRoom.roomID);
+        }
+    }
+
 
     /*
     Attempts to start the game when a player successfully joins the room
+    Removes player from any previous room they were in
     */
     function roomJoined(roomID: string) {
         const room = deps['rooms'].find((r) => r.roomID === roomID);
@@ -109,76 +139,22 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             return;
         }
 
-        // Starts game only if required number of players have joined
+        // if user is already in a room, leave that room first
+        let currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+
+        if (currentRoom) {
+            currentRoom.removePlayer(player.id);
+            socket.leave(currentRoom.roomID);
+            player.status = RoomState.GAME_NOT_STARTED;
+            player.solveTime = 0;
+            player.isDNF = false;
+        }
+
+        socket.join(room.roomID);
+        room.addPlayer(socket, player);
+
+        // Starts game and renders scramble when room is full
         room.startGame();
-    }
-
-
-    /*
-    Process rematch request
-    */
-    function processRematchRequest() {
-        const room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
-        const player = deps['players'].find((p) => p.id === socket.id);
-
-        if (!player) {
-            console.log('Player not found');
-            io.to(socket.id).emit('join:invalid');
-            return;
-        }
-
-        if (!room) {
-            console.log('Room not found');
-            io.to(socket.id).emit('join:invalid');
-            return;
-        }
-
-        const rematchRequirementsMet = room.processRematchRequest(socket.id);
-
-        if (rematchRequirementsMet) {
-            let newRoomID = genRanHex(5);
-
-            while (deps['rooms'].some(r => r.roomID === newRoomID)) {
-                newRoomID = genRanHex(5);
-            }
-
-            const newRoom = new Room(newRoomID, io);
-            deps['rooms'].push(newRoom);
-
-            // Move all players from old room to new room
-            io.to(room.roomID).emit('room:rematch_accepted', newRoom.roomID);
-        }
-    }
-
-
-
-    function joinRematchRoom(newRoomID: string) {
-        const currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
-        const newRoom = deps['rooms'].find((r) => r.roomID === newRoomID);
-        const player = deps['players'].find((p) => p.id === socket.id);
-
-        if (!currentRoom || !newRoom) {
-            console.log('Misdirected input, no room found');
-            io.to(socket.id).emit('join:invalid');
-            return;
-        }
-
-        if (!player) {
-            io.to(socket.id).emit('join:invalid');
-            return;
-        }
-
-        currentRoom.removePlayer(player.id);
-        socket.leave(currentRoom.roomID);
-        player.status = RoomState.GAME_NOT_STARTED;
-        player.solveTime = 0;
-        player.isDNF = false;
-
-        socket.join(newRoom.roomID);
-        newRoom.addPlayer(socket, player);
-
-        // Push players to room route
-        io.to(socket.id).emit('room:found', newRoom.roomID);
     }
 
 

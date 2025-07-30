@@ -112,10 +112,10 @@ export default class Room {
     }
 
     public processRematchRequest(socketID: string) {
-        let isQueued = this.rematchQueue.some((playerID) => playerID == socketID);
+        let isQueued = this.rematchQueue.some((playerID) => playerID === socketID);
 
         // If current player is the last one needed for rematch, intialize rematch
-        if (!isQueued && this.rematchQueue.length == this.players.length - 1) {
+        if (!isQueued && this.rematchQueue.length === this.maxPlayerCount - 1) {
             return true;
         }
 
@@ -123,7 +123,7 @@ export default class Room {
         isQueued ? this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID) : this.rematchQueue.push(socketID);
         isQueued = !isQueued;
 
-        this.io.to(this.roomID).emit('room:rematch_pending', socketID, { queueSize: this.rematchQueue.length, playerCount: this.players.length } , isQueued);
+        this.io.to(this.roomID).emit('room:rematch_pending', socketID, { queueSize: this.rematchQueue.length, playerCount: this.players.length }, isQueued);
 
         return false;
 
