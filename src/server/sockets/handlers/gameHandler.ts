@@ -10,7 +10,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     */
     socket.on('player:initialize', (username: string) => initializePlayer(username));
     socket.on('room:join_random', () => joinRandomRoom());
-    socket.on('room:join_rematch', () => joinSpecificRoom());
+    socket.on('room:join_rematch', () => joinRematchRoom());
     socket.on('room:joined', (roomID: string) => roomJoined(roomID));
     socket.on('keyboard:input', (socketID: string, key: string) => handleKeyboardInput(socketID, key));
     socket.on('player:completed_solve', (socketID) => handleSolveComplete(socketID));
@@ -76,9 +76,9 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
 
     /*
-    Essentially a room rematch handler; send all players in the room to a new room if all players accept the rematch
+    Send all players in the room to a new room if all players accept the rematch
     */
-    function joinSpecificRoom() {
+    function joinRematchRoom() {
         const room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
 
