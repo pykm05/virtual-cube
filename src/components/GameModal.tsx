@@ -38,7 +38,7 @@ export default function GameModal() {
     function handleRematch() {
         if (!socket || !player) return;
 
-        socket.emit('room:join_specific');
+        socket.emit('room:join_rematch');
     }
 
     function displayResults() {
