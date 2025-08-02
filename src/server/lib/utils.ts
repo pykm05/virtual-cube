@@ -35,3 +35,5 @@ export function generate3x3Scramble(length = 20): string {
 
   return scramble.join(' ');
 }
+
+export const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { getSocket, getPlayerOrder } from '@/lib/socket';
 import { Cube } from '@/components/three/cube';
 import Scene from '@/components/three/scene';
-import { Player } from '@/types/player';
+import Player from '@/types/player';
 import { Notation, KeybindMap, notationFromString, isCubeRotation } from '@/types/cubeTypes';
 import Image from 'next/image';
 

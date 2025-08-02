@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getSocket, Socket } from '@/lib/socket';
-import { Player } from '@/types/player';
+import Player from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
     
@@ -32,28 +32,13 @@ export default function GameModal() {
     function joinNewGame() {
         if (!socket || !player) return;
 
-        socket.emit('room:search', player.username);
-
-        socket.on('room:found', (roomID) => {
-            console.log('now joining room ', roomID);
-            router.push(`../play/${roomID}`);
-
-            socket.off('room:found');
-        });
+        socket.emit('room:join_random');
     }
 
     function handleRematch() {
         if (!socket || !player) return;
 
-        socket.emit('room:rematch');
-
-        socket.on('room:rematch_accepted', (roomID) => {
-            socket.emit('room:rematch_join', roomID);
-
-            router.push(`../play/${roomID}`);
-
-            socket.off('room:rematch_accepted');
-        });
+        socket.emit('room:join_rematch');
     }
 
     function displayResults() {
@@ -134,6 +119,12 @@ export default function GameModal() {
             setPlayerRanks(rankings);
         });
 
+        socket.on('room:found', (roomID) => {
+            console.log('Now joining room ', roomID);
+            router.push(`/play/${roomID}`);
+            socket.off('room:found');
+        });
+
         socket.on('room:rematch_pending', (senderID: string, roomInfo: RematchInfo, isQueued) => {
             if (senderID == socket.id && isQueued) setRematchMessage('Awaiting player response...');
             else if (roomInfo.queueSize > 0) setRematchMessage('Rematch request received');
@@ -141,10 +132,6 @@ export default function GameModal() {
 
             setRematchInfo(roomInfo);
         });
-
-        return () => {
-            socket.off('room:rematch_pending');
-        }
     }, []);
 
     return cubeSolved ? (
