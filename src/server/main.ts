@@ -19,4 +19,3 @@ server.listen(port, () => {
     console.log('Server listening on port ' + port);
     deps['webSocket'].init(server);
 });
-

@@ -7,17 +7,20 @@ Cube test is a platform that allows cubers to play against each other using keyb
 ## Getting started
 
 Download the project:
+
 ```console
 git clone https://github.com/pykm05/cube-test
 cd cube-test
 ```
 
-This project uses two servers so you'll need to first run the socket / game server: 
+This project uses two servers so you'll need to first run the socket / game server:
+
 ```console
 npm run dev
 ```
 
 Then run the webserver:
+
 ```console
 npm run next
 ```

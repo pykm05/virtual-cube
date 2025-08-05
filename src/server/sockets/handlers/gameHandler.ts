@@ -4,7 +4,6 @@ import Player from '@/types/player.ts';
 import { RoomState } from '@/types/RoomState.ts';
 import { genRanHex } from '@/server/lib/utils.ts';
 export default function initializeGameHandlers(io: Server, socket: Socket) {
-    
     /*
     Setup event listeners for the socket
     */
@@ -15,7 +14,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     socket.on('keyboard:input', (socketID: string, key: string) => handleKeyboardInput(socketID, key));
     socket.on('player:completed_solve', (socketID) => handleSolveComplete(socketID));
     socket.on('disconnect', () => disconnectPlayer());
-
 
     /*
     Initialize player and add to global players list
@@ -40,7 +38,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         socket.emit('player:initialized', socket.id);
     }
 
-
     /*
     Search for a room to join and return its roomID
     Does not add the player to the room yet, that is done in roomJoined function
@@ -55,13 +52,15 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
 
         // Join a room that has space and hasn't started yet
-        let room = deps['rooms'].find((r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED);
+        let room = deps['rooms'].find(
+            (r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED
+        );
 
         // If no room found, create a new one
         if (!room) {
             let newRoomID = genRanHex(5);
 
-            while (deps['rooms'].some(r => r.roomID === newRoomID)) {
+            while (deps['rooms'].some((r) => r.roomID === newRoomID)) {
                 newRoomID = genRanHex(5);
             }
 
@@ -73,7 +72,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         // Push players to room route
         io.to(socket.id).emit('room:found', room.roomID);
     }
-
 
     /*
     Send all players in the room to a new room if all players accept the rematch
@@ -98,13 +96,15 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         if (allPlayersAccepted) {
             console.log('Rematch accepted by all players, creating new room');
-            let newRoom = deps['rooms'].find((r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED);
+            let newRoom = deps['rooms'].find(
+                (r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.GAME_NOT_STARTED
+            );
 
             // If no room found, create a new one
             if (!newRoom) {
                 let newRoomID = genRanHex(5);
 
-                while (deps['rooms'].some(r => r.roomID === newRoomID)) {
+                while (deps['rooms'].some((r) => r.roomID === newRoomID)) {
                     newRoomID = genRanHex(5);
                 }
 
@@ -117,7 +117,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             io.to(room.roomID).emit('room:found', newRoom.roomID);
         }
     }
-
 
     /*
     Attempts to start the game when a player successfully joins the room
@@ -157,7 +156,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         room.startGame();
     }
 
-
     /*
     Recieve keyboard input from a player and forward it to the room they are in
     */
@@ -173,7 +171,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         room.handleInput(senderID, key);
     }
 
-
     /*
     Alert the room that a player has completed their solve
     */
@@ -183,7 +180,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     }
-
 
     /*
     Handle player disconnection, mark them as DNF in their room
@@ -199,4 +195,4 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         console.log('disconnect');
     }
-};
+}
