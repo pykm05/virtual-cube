@@ -19,7 +19,6 @@ export async function test() {
         let { data, error } = await supabase.from('leaderboard').delete().eq('username', 'Tymon');
         if (error) {
             console.log('Failed to delete');
-            return;
         }
     }
     {
