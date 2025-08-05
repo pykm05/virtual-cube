@@ -25,7 +25,7 @@ Then run the webserver:
 npm run next
 ```
 
-The project should be running on your browser at ```localhost:3000/play```
+The project should be running on your browser at `localhost:3000/play`
 
 ## Contributing
 
