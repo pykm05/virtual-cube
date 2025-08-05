@@ -1,8 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 import Player from '@/types/player';
 
+const NEXT_PUBLIC_API_URL = 'http://localhost:4000/';
+
 // const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3000';
-const URL = process.env.NEXT_PUBLIC_API_URL;
+const URL = NEXT_PUBLIC_API_URL;
 let socket: Socket;
 
 export function getSocket() {
