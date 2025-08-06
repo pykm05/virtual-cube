@@ -4,15 +4,15 @@ import { getSocket, Socket } from '@/lib/socket';
 import Player from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-    
+
 type RematchInfo = {
-    queueSize: number,
-    playerCount: number
-}
+    queueSize: number;
+    playerCount: number;
+};
 
 const checkAllPlayersDNF = (players: Player[]) => {
-    return players.every((player) => player.isDNF)
-}
+    return players.every((player) => player.isDNF);
+};
 
 export default function GameModal() {
     const [socket, setSocket] = useState<Socket>();
@@ -24,7 +24,7 @@ export default function GameModal() {
     const [rematchMessage, setRematchMessage] = useState('');
     const [rematchInfo, setRematchInfo] = useState<RematchInfo>({
         queueSize: 0,
-        playerCount: 0
+        playerCount: 0,
     });
 
     const router = useRouter();

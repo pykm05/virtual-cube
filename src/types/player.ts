@@ -7,10 +7,7 @@ export default class Player {
     public solveTime: number;
     public isDNF: boolean;
 
-    constructor(
-        id: string,
-        username: string,
-    ) {
+    constructor(id: string, username: string) {
         this.id = id;
         this.username = username;
         this.status = RoomState.GAME_NOT_STARTED;

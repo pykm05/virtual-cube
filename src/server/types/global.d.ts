@@ -1,7 +1,7 @@
 import type { Deps } from '../modules/deps';
 
 declare global {
-  var deps: Deps;
+    var deps: Deps;
 }
 
-export { }
+export {};

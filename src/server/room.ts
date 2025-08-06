@@ -31,7 +31,7 @@ export default class Room {
         if (this.roomStatus !== RoomState.GAME_NOT_STARTED) return;
 
         this.updateGameStatus();
-    }                  
+    }
 
     public addPlayer(socket: Socket, player: Player) {
         if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
@@ -120,13 +120,21 @@ export default class Room {
         }
 
         // If player is already queued to rematch and clicks rematch again, remove from queue
-        isQueued ? this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID) : this.rematchQueue.push(socketID);
+        isQueued
+            ? (this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID))
+            : this.rematchQueue.push(socketID);
         isQueued = !isQueued;
 
-        this.io.to(this.roomID).emit('room:rematch_pending', socketID, { queueSize: this.rematchQueue.length, playerCount: this.players.length }, isQueued);
+        this.io
+            .to(this.roomID)
+            .emit(
+                'room:rematch_pending',
+                socketID,
+                { queueSize: this.rematchQueue.length, playerCount: this.players.length },
+                isQueued
+            );
 
         return false;
-
     }
 
     private updateGameStatus() {
@@ -154,7 +162,7 @@ export default class Room {
                     this.inspectionTime--;
 
                     for (const player of this.players) {
-                        if (player.status == RoomState.INSPECTION_TIME) 
+                        if (player.status == RoomState.INSPECTION_TIME)
                             this.io.to(player.id).emit('timer:update', this.inspectionTime);
                     }
 
@@ -188,16 +196,13 @@ export default class Room {
 
                             this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
 
-                            
-                            if(player.solveTime >= this.solveTimeLimit) {
+                            if (player.solveTime >= this.solveTimeLimit) {
                                 this.playerDNF(player.id);
                             }
                         }
                     }
 
-                    if (
-                        !this.players.some((player) => player.status != RoomState.GAME_ENDED)
-                    ) {
+                    if (!this.players.some((player) => player.status != RoomState.GAME_ENDED)) {
                         for (const player of this.players) {
                             this.rankings.push(player);
                             player.status = RoomState.GAME_ENDED;

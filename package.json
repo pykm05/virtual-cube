@@ -1,42 +1,42 @@
 {
-  "name": "cube-site",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "next": "next dev",
-    "dev": "tsx src/server/main.ts",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.53.0",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "lucide-react": "^0.536.0",
-    "next": "15.3.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "three": "^0.177.0"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/express": "^5.0.2",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/three": "^0.177.0",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.3",
-    "nodemon": "^3.1.10",
-    "supabase": "^2.33.9",
-    "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
-  }
+    "name": "cube-site",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "next": "next dev",
+        "dev": "tsx src/server/main.ts",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.53.0",
+        "dotenv": "^17.2.1",
+        "express": "^5.1.0",
+        "lucide-react": "^0.536.0",
+        "next": "15.3.3",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "socket.io": "^4.8.1",
+        "socket.io-client": "^4.8.1",
+        "three": "^0.177.0"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3",
+        "@tailwindcss/postcss": "^4",
+        "@types/express": "^5.0.2",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/three": "^0.177.0",
+        "eslint": "^9",
+        "eslint-config-next": "15.3.3",
+        "nodemon": "^3.1.10",
+        "supabase": "^2.33.9",
+        "tailwindcss": "^4",
+        "ts-node": "^10.9.2",
+        "tsx": "^4.19.4",
+        "typescript": "^5.8.3"
+    }
 }
