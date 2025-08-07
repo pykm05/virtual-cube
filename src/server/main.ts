@@ -16,23 +16,21 @@ app.get('/', (_, res) => {
 
 app.get('/api/leaderboard/:limit', async (req, res) => {
     const limit = parseInt(req.params.limit, 10);
-    if (isNaN(limit)){
+    if (isNaN(limit)) {
         console.log(`Invalid limit (${req.params.limit}) NaN`);
         res.status(400).json({ error: 'Malformed request' });
     }
 
-    let { data, error } = await supabase.from('leaderboard').select()
-    .order('time', { ascending: true })
-    .limit(limit);
+    let { data, error } = await supabase.from('leaderboard').select().order('time', { ascending: true }).limit(limit);
 
     if (error) {
         console.log(`Failed to fetch the leaderboard (lim ${limit}) due to: ${JSON.stringify(error)}`);
         res.status(500).json({ error: 'An error occurred while fetching data.' });
         return;
     }
-    console.log(data);
+    // console.log(data);
 
-    res.status(200).json({ leaderboard: data });
+    res.status(200).json(data);
 });
 
 const server = http.createServer(app);

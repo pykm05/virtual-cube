@@ -2,12 +2,9 @@
 
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Database } from '@/types/supabase';
 
-interface LeaderboardEntry {
-    username: string;
-    time: number; // in seconds
-    timestamp: string;
-}
+type Leaderboard = Database['public']['Tables']['leaderboard']['Row'];
 
 interface LeaderboardModalProps {
     isOpen: boolean;
@@ -32,85 +29,42 @@ function getRelativeTime(timestamp: string) {
     return `${diffWeek}w ago`;
 }
 
+async function getLeaderboard(): Promise<Leaderboard[] | null> {
+    try {
+        const response = await fetch(`http://localhost:4000/api/leaderboard/10`);
+
+        if (!response.ok) {
+            console.log(`Unexpected http code: ${response.status}`);
+            return null;
+        }
+
+        const lb: Leaderboard[] = await response.json();
+        return lb;
+    } catch (error) {
+        console.error('Error fetching leaderboard: ${error}');
+        return null;
+    }
+}
+
 export default function LeaderboardModal({ isOpen, onClose, currentUser }: LeaderboardModalProps) {
-    const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+    const [entries, setEntries] = useState<Leaderboard[]>([]);
 
     useEffect(() => {
         if (isOpen) {
-            setEntries([
-                {
-                    username: "player1",
-                    time: 333,
-                    timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "player2",
-                    time: 340,
-                    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "champion",
-                    time: 120,
-                    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "player1",
-                    time: 333,
-                    timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "player2",
-                    time: 340,
-                    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "champion",
-                    time: 120,
-                    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-                },
-                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-                                {
-                    username: "ace",
-                    time: 150,
-                    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-                },
-            ]);
+            let c = async () => {
+                const data = (await getLeaderboard()) ?? [];
+                // console.log(`got leaderboard: ${JSON.stringify(data)}`);
+                setEntries(data);
+            };
+
+            c(); // You really can't call an anon closure ? :c
         }
     }, [isOpen]);
 
     if (!isOpen) return null;
 
     const getRankIcon = (index: number) => {
-        const icons = ["🥇", "🥈", "🥉"];
+        const icons = ['🥇', '🥈', '🥉'];
         return icons[index] || `${index + 1}`;
     };
 
@@ -125,7 +79,6 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
             {/* Modal */}
             <div className="absolute inset-x-0 bottom-0 h-[75vh] md:relative md:inset-auto md:flex md:items-center md:justify-center md:min-h-full md:p-4 md:h-auto">
                 <div className="w-full h-full md:w-[40rem] md:h-auto md:max-h-[50vh] bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-2xl border border-gray-700/40 rounded-t-2xl md:rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden">
-                    
                     {/* Drag handle (mobile) */}
                     <div className="md:hidden flex justify-center pt-3 pb-2 flex-shrink-0">
                         <div className="w-12 h-1 bg-gray-500 rounded-full"></div>
@@ -170,16 +123,14 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                                                 <td className="py-2 px-2 truncate max-w-[8rem]">{entry.username}</td>
                                                 <td className="py-2 px-2">{entry.time.toFixed(2)}</td>
                                                 <td className="py-2 px-2 text-xs text-gray-400">
-                                                    {getRelativeTime(entry.timestamp)}
+                                                    {getRelativeTime(entry.date)}
                                                 </td>
                                             </tr>
                                         );
                                     })}
                             </tbody>
                         </table>
-                        {entries.length === 0 && (
-                            <p className="text-center text-gray-400 pt-6">No entries yet.</p>
-                        )}
+                        {entries.length === 0 && <p className="text-center text-gray-400 pt-6">No entries yet.</p>}
                     </div>
                 </div>
             </div>
