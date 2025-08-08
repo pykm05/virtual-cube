@@ -21,7 +21,7 @@ app.get('/api/leaderboard/:limit', async (req, res) => {
         res.status(400).json({ error: 'Malformed request' });
     }
 
-    let { data, error } = await supabase.from('leaderboard').select().order('time', { ascending: true }).limit(limit);
+    let { data, error } = await supabase.from('leaderboard').select().order('solve_duration', { ascending: true }).limit(limit);
 
     if (error) {
         console.log(`Failed to fetch the leaderboard (lim ${limit}) due to: ${JSON.stringify(error)}`);

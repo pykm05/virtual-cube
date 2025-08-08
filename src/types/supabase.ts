@@ -11,21 +11,21 @@ export type Database = {
     Tables: {
       leaderboard: {
         Row: {
-          date: string
+          solved_at: string
           id: number
-          time: number
+          solve_duration: number
           username: string
         }
         Insert: {
-          date: string
+          solved_at: string
           id?: number
-          time: number
+          solve_duration: number
           username: string
         }
         Update: {
-          date?: string
+          solved_at?: string
           id?: number
-          time?: number
+          solve_duration?: number
           username?: string
         }
         Relationships: []

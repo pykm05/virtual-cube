@@ -224,8 +224,8 @@ export default class Room {
 
                 const currentDate = new Date(Date.now()).toISOString();
 
-                const upload = async (username: string, time: number) => {
-                    let {error} = await supabase.from('leaderboard').insert({ username: username, time: time, date: currentDate });
+                const upload = async (username: string, solve_duration: number) => {
+                    let {error} = await supabase.from('leaderboard').insert({ username: username, solve_duration: solve_duration, solved_at: currentDate });
 
                     if (error){
                         console.log(`Failed to upload to DB due to ${JSON.stringify(error)}`);

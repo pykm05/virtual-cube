@@ -109,7 +109,7 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                             </thead>
                             <tbody>
                                 {[...entries]
-                                    .sort((a, b) => a.time - b.time)
+                                    .sort((a, b) => a.solve_duration - b.solve_duration)
                                     .map((entry, index) => {
                                         const highlight = currentUser && entry.username === currentUser;
                                         return (
@@ -121,9 +121,9 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                                             >
                                                 <td className="py-2 px-2">{getRankIcon(index)}</td>
                                                 <td className="py-2 px-2 truncate max-w-[8rem]">{entry.username}</td>
-                                                <td className="py-2 px-2">{entry.time.toFixed(2)}</td>
+                                                <td className="py-2 px-2">{entry.solve_duration.toFixed(2)}</td>
                                                 <td className="py-2 px-2 text-xs text-gray-400">
-                                                    {getRelativeTime(entry.date)}
+                                                    {getRelativeTime(entry.solved_at)}
                                                 </td>
                                             </tr>
                                         );
