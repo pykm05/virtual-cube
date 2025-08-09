@@ -105,8 +105,6 @@ export default class Room {
             console.log('rankings', this.rankings);
             this.io.to(socketID).emit('game:complete', this.rankings);
         }
-
-        this.updateGameStatus();
     }
 
     public processRematchRequest(socketID: string) {
@@ -207,6 +205,11 @@ export default class Room {
                             player.solveTime = Number(player.solveTime.toFixed(2));
                             this.io.to(player.id).emit('player:completed_solve', player);
                         }
+
+                        if (this.players.some((player) => player.isDNF))
+                            console.log('GAME ENDED: PLAYER DNF/DISCONNECTED')
+                        else 
+                            console.log('GAME ENDED: ALL SOLVES COMPLETE')
 
                         this.io.to(this.roomID).emit('game:complete', this.rankings);
 
