@@ -232,7 +232,8 @@ export default class Room {
                     }
                 };
                 for (const player of this.players) {
-                    upload(player.username, player.solveTime)
+                    if (!player.isDNF)
+                        upload(player.username, player.solveTime)
                 }
 
                 // if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
