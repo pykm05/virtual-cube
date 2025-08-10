@@ -3,5 +3,6 @@ create table leaderboard (
   username VARCHAR NOT NULL,
   solve_duration FLOAT NOT NULL,
   solved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  scramble VARCHAR(59) NOT NULL
+  scramble VARCHAR(59) NOT NULL,
+  move_list VARCHAR NOT NULL
 );

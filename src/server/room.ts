@@ -64,25 +64,34 @@ export default class Room {
 
     public handleInput(socketID: string, notationString: string) {
         this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
-        const playerIndex = this.findPlayerIndex(socketID);
+
+        let player = this.players.find((p) => p.id == socketID);
+
+        if (!player) {
+            return;
+        }
 
         const notation = notationFromString(notationString);
+
         if (!notation) {
             console.log(`Failed to handle input '${notationString}': Invalid notation'`);
             return;
         }
 
-        if (playerIndex != -1 && this.players[playerIndex].status == RoomState.INSPECTION_TIME) {
-            if (!isCubeRotation(notation)) {
-                if (this.roomStatus == RoomState.INSPECTION_TIME) {
-                    this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
-                    this.updateGameStatus();
-                }
+        player.moveList += notationString;
 
-                this.io.to(socketID).emit('solve:in_progress');
-                this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
-            }
+        if (player.status != RoomState.INSPECTION_TIME || isCubeRotation(notation)) {
+            return;
         }
+
+        if (this.roomStatus == RoomState.INSPECTION_TIME) {
+            console.log('');
+            this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+            this.updateGameStatus();
+        }
+
+        this.io.to(socketID).emit('solve:in_progress');
+        this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
     }
 
     public playerSolveComplete(socketID: string) {
@@ -211,9 +220,8 @@ export default class Room {
                         }
 
                         if (this.players.some((player) => player.isDNF))
-                            console.log('GAME ENDED: PLAYER DNF/DISCONNECTED')
-                        else 
-                            console.log('GAME ENDED: ALL SOLVES COMPLETE')
+                            console.log('GAME ENDED: PLAYER DNF/DISCONNECTED');
+                        else console.log('GAME ENDED: ALL SOLVES COMPLETE');
 
                         this.io.to(this.roomID).emit('game:complete', this.rankings);
 
@@ -231,25 +239,23 @@ export default class Room {
 
                 const currentDate = new Date(Date.now()).toISOString();
 
-                const upload = async (username: string, solve_duration: number) => {
-                    let {error} = await supabase.from('leaderboard').insert({ username: username, solve_duration: solve_duration, solved_at: currentDate, scramble: this.scramble });
+                const upload = async (username: string, solve_duration: number, move_list: string) => {
+                    let { error } = await supabase.from('leaderboard').insert({
+                        username: username,
+                        solve_duration: solve_duration,
+                        solved_at: currentDate,
+                        scramble: this.scramble,
+                        move_list: move_list,
+                    });
 
-                    if (error){
+                    if (error) {
                         console.log(`Failed to upload to DB due to ${JSON.stringify(error)}`);
                     }
                 };
                 for (const player of this.players) {
-                    if (!player.isDNF)
-                        upload(player.username, player.solveTime)
+                    if (!player.isDNF) upload(player.username, player.solveTime, player.moveList);
                 }
 
-                // if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
-
-                // this.players = [];
-                // this.roomStatus = RoomState.GAME_NOT_STARTED;
-                // this.inspectionTime = 15;
-                // this.solveTime = 0;
-                // this.rankings = [];
                 break;
             default:
                 break;
