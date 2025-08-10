@@ -9,7 +9,10 @@ export default class Room {
     public roomID: string;
     public players: Player[] = [];
     public roomStatus = RoomState.GAME_NOT_STARTED;
-    public scramble: string = generate3x3Scramble();
+
+    // 20 moves scrambles are linked to db structure, mind that if you ever change this
+    // public scramble: string = generate3x3Scramble(20);
+    public scramble: string = "L' L'";
 
     private inspectionTime = 15;
     private solveTime: number = 0;
@@ -20,6 +23,7 @@ export default class Room {
     private rankings: Player[] = [];
 
     constructor(roomID: string, io: Server) {
+        console.log(`New room initialized with:\n  Id: ${roomID}\n  Scramble: ${this.scramble}`);
         this.io = io;
         this.roomID = roomID;
     }
@@ -58,13 +62,13 @@ export default class Room {
         }
     }
 
-    public handleInput(socketID: string, key: string) {
-        this.io.to(this.roomID).emit('keyboard:input', socketID, key);
+    public handleInput(socketID: string, notationString: string) {
+        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
         const playerIndex = this.findPlayerIndex(socketID);
 
-        const notation = notationFromString(key);
+        const notation = notationFromString(notationString);
         if (!notation) {
-            console.log(`Failed to handle input '${key}': Invalid notation'`);
+            console.log(`Failed to handle input '${notationString}': Invalid notation'`);
             return;
         }
 
@@ -140,7 +144,7 @@ export default class Room {
                 if (this.players.length == this.maxPlayerCount) {
                     for (const player of this.players) {
                         if (player.status == RoomState.GAME_NOT_STARTED) {
-                            console.log(this.scramble);
+                            // console.log(this.scramble);
                             this.io.to(player.id).emit('game:start', this.players, this.scramble);
                             player.status = RoomState.INSPECTION_TIME;
                         }
@@ -228,7 +232,7 @@ export default class Room {
                 const currentDate = new Date(Date.now()).toISOString();
 
                 const upload = async (username: string, solve_duration: number) => {
-                    let {error} = await supabase.from('leaderboard').insert({ username: username, solve_duration: solve_duration, solved_at: currentDate });
+                    let {error} = await supabase.from('leaderboard').insert({ username: username, solve_duration: solve_duration, solved_at: currentDate, scramble: this.scramble });
 
                     if (error){
                         console.log(`Failed to upload to DB due to ${JSON.stringify(error)}`);

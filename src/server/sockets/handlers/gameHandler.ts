@@ -159,9 +159,9 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
 
     /*
-    Recieve keyboard input from a player and forward it to the room they are in
+    Recieve keyboard input (AS CUBE NOTATION string) from a player and forward it to the room they are in
     */
-    function handleKeyboardInput(senderID: string, key: string) {
+    function handleKeyboardInput(senderID: string, notationString: string) {
         let room = deps['rooms'].find((r) => r.players.some((p) => p.id === senderID));
 
         if (!room) {
@@ -170,7 +170,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             return;
         }
 
-        room.handleInput(senderID, key);
+        room.handleInput(senderID, notationString);
     }
 
 
