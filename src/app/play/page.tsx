@@ -57,7 +57,7 @@ export default function PlayHome() {
                 <div className="text-center space-y-4">
                     <div className="space-y-2">
                         <h1 className="text-4xl font-bold text-white">Virtual Cube</h1>
-                        <p className="text-gray-300 text-lg font-medium">Compete. Solve. Conquer.</p>
+                        <p className="text-gray-300 text-lg font-medium">The digital Rubiks Cube Competition platform</p>
                     </div>
                 </div>
 

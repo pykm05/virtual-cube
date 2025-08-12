@@ -14,6 +14,8 @@ export type Database = {
           solved_at: string
           id: number
           solve_duration: number
+          scramble: string
+          move_list: string
           username: string
         }
         Insert: {

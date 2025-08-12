@@ -78,7 +78,7 @@ export default class Room {
             return;
         }
 
-        player.moveList += notationString;
+        player.moveList += ' ' + notationString;
 
         if (player.status != RoomState.INSPECTION_TIME || isCubeRotation(notation)) {
             return;
