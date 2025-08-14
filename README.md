@@ -1,6 +1,6 @@
-## Cube Test
+## Virtual Cube
 
-Cube test is a platform that allows cubers to play against each other using keyboard controlled vitual cubes.
+Virtual Cube is a platform that allows cubers to play against each other using keyboard controlled rubiks cubes.
 
 ⚠️ The project is currently in early development phase
 
@@ -9,8 +9,8 @@ Cube test is a platform that allows cubers to play against each other using keyb
 Download the project:
 
 ```console
-git clone https://github.com/pykm05/cube-test
-cd cube-test
+git clone https://github.com/pykm05/Virtual-Cube
+cd Virtual-Cube
 ```
 
 This project uses two servers so you'll need to first run the socket / game server:
