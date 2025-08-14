@@ -5,8 +5,8 @@ export const metadata: Metadata = {
     title: 'Virtual Cube',
     description: '...',
     icons: {
-        icon: '/Virtual Cube.svg'
-    }
+        icon: '/Virtual Cube.svg',
+    },
 };
 
 export default function RootLayout({
