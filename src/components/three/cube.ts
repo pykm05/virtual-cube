@@ -48,11 +48,9 @@ class Cube {
             position: p.position.clone(),
         }));
 
-        // if (scramble) {
-        //     this.instantScramble(scramble);
-        // }
-
-        this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
+        if (scramble) {
+            this.instantScramble(scramble);
+        }
 
         this.render();
     }
