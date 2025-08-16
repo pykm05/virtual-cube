@@ -22,22 +22,22 @@ export default function PlayHome() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim()) {
-            if (!socket) return;
 
-            socket.emit('player:initialize', name);
+        if (!socket) return;
 
-            socket.on('player:initialized', () => {
-                socket.emit('room:join_random');
-                socket.off('player:initialized');
-            });
+        socket.emit('player:initialize', name);
 
-            socket.on('room:found', (roomID) => {
-                console.log('Now joining room ', roomID);
-                router.push(`/play/${roomID}`);
-                socket.off('room:found');
-            });
-        }
+        socket.on('player:initialized', () => {
+            socket.emit('room:join_random');
+            socket.off('player:initialized');
+        });
+
+        socket.on('room:found', (roomID) => {
+            console.log('Now joining room ', roomID);
+            router.push(`/play/${roomID}`);
+            socket.off('room:found');
+        });
+
     };
 
     return (
@@ -79,18 +79,16 @@ export default function PlayHome() {
                             <input
                                 id="player-name"
                                 type="text"
-                                placeholder="Cubemaster2024"
+                                placeholder="an unnamed cuber"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-3 py-3 bg-gray-700/50 border border-gray-500/50 rounded-md text-gray-100 placeholder:text-gray-400 focus:outline-none h-12 text-lg backdrop-blur-sm transition-colors"
-                                required
                             />
                         </div>
 
                         <button
                             type="submit"
-                            disabled={!name.trim()}
-                            className="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-100 font-medium h-10 text-base rounded-lg transition-all duration-200 shadow-lg shadow-slate-700/20 hover:shadow-slate-600/30 hover:scale-[1.01] active:scale-[0.99] border border-slate-600 hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500/50"
+                            className="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-gray-100 font-medium h-10 text-base rounded-lg transition-all duration-200 shadow-lg shadow-slate-700/20 hover:shadow-slate-600/30 hover:scale-[1.01] active:scale-[0.99] border border-slate-600 hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500/50"
                         >
                             Continue to Game
                         </button>

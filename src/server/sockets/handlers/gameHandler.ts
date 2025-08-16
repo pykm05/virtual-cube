@@ -16,25 +16,25 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     socket.on('disconnect', () => disconnectPlayer());
 
     /*
-    Initialize player and add to global players list
+    Initialize player and add to global players listif not done already
     */
     function initializePlayer(username: string) {
-        if (deps['players'].some((p) => p.id === socket.id)) {
-            console.log('player already exists');
-            return;
+        if (!deps['players'].some((p) => p.id === socket.id)) {
+            if (username == '') username = 'an unnamed cuber';
+
+            const player = new Player(socket.id, username);
+
+            if (!player) {
+                console.log('Failed to create player');
+                io.to(socket.id).emit('join:invalid');
+                return;
+            }
+            console.log('no')
+            deps['players'].push(player);
         }
 
-        if (username == '') username = 'an unnamed cuber';
+        console.log('hi')
 
-        const player = new Player(socket.id, username);
-
-        if (!player) {
-            console.log('Failed to create player');
-            io.to(socket.id).emit('join:invalid');
-            return;
-        }
-
-        deps['players'].push(player);
         socket.emit('player:initialized', socket.id);
     }
 
