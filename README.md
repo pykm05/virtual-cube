@@ -30,3 +30,7 @@ The project should be running on your browser at `localhost:3000/play`
 ## Contributing
 
 Join our [Discord](https://discord.gg/ZDTMZz7B) for information about the development process.
+
+## Credit/Special Thanks
+
+Special thanks to @Bowarc and @star_sailor for feedback, prs, and ideas!
