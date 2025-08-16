@@ -41,6 +41,10 @@ export default function GameModal() {
         socket.emit('room:join_rematch');
     }
 
+    function returnToMenu() {
+        router.push(`/play`);
+    }
+
     function displayResults() {
         if (!player) return;
 
@@ -52,9 +56,19 @@ export default function GameModal() {
 
         return (
             <div className="flex flex-col w-full h-full">
-                <div className="flex text-lg mb-[20px] justify-center items-center px-3 py-5 border-b-2">
-                    {tied ? 'Tie' : won ? 'You won!' : 'You lost'}
+                <div className="relative flex text-lg mb-[20px] justify-center items-center px-3 py-5 border-b-2">
+                    <button
+                        onClick={returnToMenu}
+                        className="absolute border-2 top-2 left-2 flex items-center px-1 rounded-full"
+                    >
+                        X
+                    </button>
+
+                    {/* Centered status text */}
+                    <div>{tied ? 'Tie' : won ? 'You won!' : 'You lost'}</div>
                 </div>
+
+
                 {!tied && (
                     <div className="flex">
                         <div className="flex flex-1 justify-center">
