@@ -6,6 +6,7 @@ export default class Player {
     public status: string;
     public solveTime: number;
     public isDNF: boolean;
+    public moveList: string;
 
     constructor(id: string, username: string) {
         this.id = id;
@@ -13,5 +14,6 @@ export default class Player {
         this.status = RoomState.GAME_NOT_STARTED;
         this.solveTime = 0;
         this.isDNF = false;
+        this.moveList = '';
     }
 }

@@ -3,12 +3,15 @@ import Player from '@/types/player';
 import { RoomState } from '@/types/RoomState';
 import { generate3x3Scramble } from './lib/utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
+import { supabase } from './db';
 
 export default class Room {
     public roomID: string;
     public players: Player[] = [];
     public roomStatus = RoomState.GAME_NOT_STARTED;
-    public scramble: string = generate3x3Scramble();
+
+    // 20 moves scrambles are linked to db structure, mind that if you ever change this
+    public scramble: string = generate3x3Scramble(20);
 
     private inspectionTime = 15;
     private solveTime: number = 0;
@@ -19,6 +22,7 @@ export default class Room {
     private rankings: Player[] = [];
 
     constructor(roomID: string, io: Server) {
+        console.log(`New room initialized with:\n  Id: ${roomID}\n  Scramble: ${this.scramble}`);
         this.io = io;
         this.roomID = roomID;
     }
@@ -57,27 +61,36 @@ export default class Room {
         }
     }
 
-    public handleInput(socketID: string, key: string) {
-        this.io.to(this.roomID).emit('keyboard:input', socketID, key);
-        const playerIndex = this.findPlayerIndex(socketID);
+    public handleInput(socketID: string, notationString: string) {
+        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
 
-        const notation = notationFromString(key);
-        if (!notation) {
-            console.log(`Failed to handle input '${key}': Invalid notation'`);
+        let player = this.players.find((p) => p.id == socketID);
+
+        if (!player) {
             return;
         }
 
-        if (playerIndex != -1 && this.players[playerIndex].status == RoomState.INSPECTION_TIME) {
-            if (!isCubeRotation(notation)) {
-                if (this.roomStatus == RoomState.INSPECTION_TIME) {
-                    this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
-                    this.updateGameStatus();
-                }
+        const notation = notationFromString(notationString);
 
-                this.io.to(socketID).emit('solve:in_progress');
-                this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
-            }
+        if (!notation) {
+            console.log(`Failed to handle input '${notationString}': Invalid notation'`);
+            return;
         }
+
+        player.moveList += ' ' + notationString;
+
+        if (player.status != RoomState.INSPECTION_TIME || isCubeRotation(notation)) {
+            return;
+        }
+
+        if (this.roomStatus == RoomState.INSPECTION_TIME) {
+            console.log('');
+            this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+            this.updateGameStatus();
+        }
+
+        this.io.to(socketID).emit('solve:in_progress');
+        this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
     }
 
     public playerSolveComplete(socketID: string) {
@@ -103,11 +116,6 @@ export default class Room {
         if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
             console.log('rankings', this.rankings);
             this.io.to(socketID).emit('game:complete', this.rankings);
-        }
-
-        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
-            this.roomStatus = RoomState.GAME_ENDED;
-            this.updateGameStatus();
         }
     }
 
@@ -144,7 +152,7 @@ export default class Room {
                 if (this.players.length == this.maxPlayerCount) {
                     for (const player of this.players) {
                         if (player.status == RoomState.GAME_NOT_STARTED) {
-                            console.log(this.scramble);
+                            // console.log(this.scramble);
                             this.io.to(player.id).emit('game:start', this.players, this.scramble);
                             player.status = RoomState.INSPECTION_TIME;
                         }
@@ -210,6 +218,10 @@ export default class Room {
                             this.io.to(player.id).emit('player:completed_solve', player);
                         }
 
+                        if (this.players.some((player) => player.isDNF))
+                            console.log('GAME ENDED: PLAYER DNF/DISCONNECTED');
+                        else console.log('GAME ENDED: ALL SOLVES COMPLETE');
+
                         this.io.to(this.roomID).emit('game:complete', this.rankings);
 
                         if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
@@ -222,13 +234,27 @@ export default class Room {
                 }, 10);
                 break;
             case RoomState.GAME_ENDED:
-                // if (this.players.some((player) => player.status != RoomState.GAME_ENDED)) return;
+                console.log('GAME HAS ENDED');
 
-                // this.players = [];
-                // this.roomStatus = RoomState.GAME_NOT_STARTED;
-                // this.inspectionTime = 15;
-                // this.solveTime = 0;
-                // this.rankings = [];
+                const currentDate = new Date(Date.now()).toISOString();
+
+                const upload = async (username: string, solve_duration: number, move_list: string) => {
+                    let { error } = await supabase.from('leaderboard').insert({
+                        username: username,
+                        solve_duration: solve_duration,
+                        solved_at: currentDate,
+                        scramble: this.scramble,
+                        move_list: move_list,
+                    });
+
+                    if (error) {
+                        console.log(`Failed to upload to DB due to ${JSON.stringify(error)}`);
+                    }
+                };
+                for (const player of this.players) {
+                    if (!player.isDNF) upload(player.username, player.solveTime, player.moveList);
+                }
+
                 break;
             default:
                 break;
