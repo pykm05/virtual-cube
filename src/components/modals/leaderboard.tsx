@@ -1,53 +1,53 @@
-"use client"
-import { X, User, Trophy, Clock, Calendar } from "lucide-react"
-import { useEffect, useState } from "react"
-import type { Database } from "@/types/supabase"
+'use client';
+import { X, User, Trophy, Clock, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { Database } from '@/types/supabase';
 
-type Leaderboard = Database["public"]["Tables"]["leaderboard"]["Row"]
+type Leaderboard = Database['public']['Tables']['leaderboard']['Row'];
 
 interface LeaderboardModalProps {
-    isOpen: boolean
-    onClose: () => void
-    currentUser?: string
+    isOpen: boolean;
+    onClose: () => void;
+    currentUser?: string;
 }
 
 function getRelativeTime(timestamp: string) {
-    const now = new Date()
-    const past = new Date(timestamp)
-    const diffMs = now.getTime() - past.getTime()
-    const diffSec = Math.floor(diffMs / 1000)
-    const diffMin = Math.floor(diffSec / 60)
-    const diffHr = Math.floor(diffMin / 60)
-    const diffDay = Math.floor(diffHr / 24)
-    const diffWeek = Math.floor(diffDay / 7)
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diffMs = now.getTime() - past.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+    const diffWeek = Math.floor(diffDay / 7);
 
-    if (diffSec < 60) return `${diffSec}s ago`
-    if (diffMin < 60) return `${diffMin}m ago`
-    if (diffHr < 24) return `${diffHr}h ago`
-    if (diffDay < 7) return `${diffDay}d ago`
-    return `${diffWeek}w ago`
+    if (diffSec < 60) return `${diffSec}s ago`;
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return `${diffWeek}w ago`;
 }
 
 async function getLeaderboard(): Promise<Leaderboard[] | null> {
     try {
-        const response = await fetch(`http://localhost:4000/api/leaderboard/10`)
+        const response = await fetch(`http://localhost:4000/api/leaderboard/10`);
 
         if (!response.ok) {
-            console.log(`Unexpected http code: ${response.status}`)
-            return null
+            console.log(`Unexpected http code: ${response.status}`);
+            return null;
         }
 
-        const lb: Leaderboard[] = await response.json()
-        return lb
+        const lb: Leaderboard[] = await response.json();
+        return lb;
     } catch (error) {
-        console.error("Error fetching leaderboard: ${error}")
-        return null
+        console.error('Error fetching leaderboard: ${error}');
+        return null;
     }
 }
 
 function UserSideModal({ user, entries, onClose }: { user: Leaderboard; entries: Leaderboard[]; onClose: () => void }) {
-    const sorted = [...entries].sort((a, b) => a.solve_duration - b.solve_duration)
-    const rank = sorted.findIndex(e => e.username === user.username && e.solved_at === user.solved_at) + 1
+    const sorted = [...entries].sort((a, b) => a.solve_duration - b.solve_duration);
+    const rank = sorted.findIndex((e) => e.username === user.username && e.solved_at === user.solved_at) + 1;
 
     return (
         <div className="fixed right-0 top-0 h-full w-100 bg-gradient-to-b from-gray-800/95 to-gray-900/95 backdrop-blur-xl border-l border-gray-700/50 shadow-2xl z-60 animate-slide-in">
@@ -108,9 +108,7 @@ function UserSideModal({ user, entries, onClose }: { user: Leaderboard; entries:
                         <h5 className="text-sm font-semibold text-white uppercase tracking-wide">Scramble</h5>
                     </div>
                     <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/30">
-                        <p className="text-sm text-gray-300 font-mono leading-relaxed">
-                            {user.scramble}
-                        </p>
+                        <p className="text-sm text-gray-300 font-mono leading-relaxed">{user.scramble}</p>
                     </div>
                 </div>
 
@@ -119,60 +117,58 @@ function UserSideModal({ user, entries, onClose }: { user: Leaderboard; entries:
                         <h5 className="text-sm font-semibold text-white uppercase tracking-wide">Solution</h5>
                     </div>
                     <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/30">
-                        <p className="text-sm text-gray-300 font-mono leading-relaxed">
-                            {user.move_list}
-                        </p>
+                        <p className="text-sm text-gray-300 font-mono leading-relaxed">{user.move_list}</p>
                     </div>
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 export default function LeaderboardModal({ isOpen, onClose, currentUser }: LeaderboardModalProps) {
-    const [entries, setEntries] = useState<Leaderboard[]>([])
-    const [selectedUser, setSelectedUser] = useState<Leaderboard | null>(null)
+    const [entries, setEntries] = useState<Leaderboard[]>([]);
+    const [selectedUser, setSelectedUser] = useState<Leaderboard | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             const c = async () => {
-                const data = (await getLeaderboard()) ?? []
-                setEntries(data)
-            }
+                const data = (await getLeaderboard()) ?? [];
+                setEntries(data);
+            };
 
-            c()
+            c();
         }
-    }, [isOpen])
+    }, [isOpen]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (selectedUser) {
-                const target = event.target as Element
+                const target = event.target as Element;
                 // Don't close if clicking on the side modal itself
-                if (!target.closest(".side-modal") && !target.closest("tr[data-user-row]")) {
-                    setSelectedUser(null)
+                if (!target.closest('.side-modal') && !target.closest('tr[data-user-row]')) {
+                    setSelectedUser(null);
                 }
             }
-        }
+        };
 
         if (selectedUser) {
-            document.addEventListener("click", handleClickOutside)
-            return () => document.removeEventListener("click", handleClickOutside)
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
         }
-    }, [selectedUser])
+    }, [selectedUser]);
 
     const handleUserClick = (user: Leaderboard) => {
-        setSelectedUser(user)
-    }
+        setSelectedUser(user);
+    };
 
-    if (!isOpen) return null
+    if (!isOpen) return null;
 
     const getRankIcon = (index: number) => {
-        const icons = ["🥇", "🥈", "🥉"]
-        return icons[index] || `${index + 1}`
-    }
+        const icons = ['🥇', '🥈', '🥉'];
+        return icons[index] || `${index + 1}`;
+    };
 
-    const sortedEntries = [...entries].sort((a, b) => a.solve_duration - b.solve_duration)
+    const sortedEntries = [...entries].sort((a, b) => a.solve_duration - b.solve_duration);
 
     return (
         <div className="fixed inset-0 z-50 animate-fade-in">
@@ -185,7 +181,7 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
             {/* Main Modal */}
             <div className="absolute inset-x-0 bottom-0 h-[75vh] md:relative md:inset-auto md:flex md:items-center md:justify-center md:min-h-full md:p-4 md:h-auto">
                 <div
-                    className={`w-full h-full md:w-[40rem] md:h-auto md:max-h-[50vh] bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-2xl border border-gray-700/40 rounded-t-2xl md:rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden transition-all duration-300 ${selectedUser ? "md:mr-80" : ""}`}
+                    className={`w-full h-full md:w-[40rem] md:h-auto md:max-h-[50vh] bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-2xl border border-gray-700/40 rounded-t-2xl md:rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden transition-all duration-300 ${selectedUser ? 'md:mr-80' : ''}`}
                 >
                     {/* Drag handle (mobile) */}
                     <div className="md:hidden flex justify-center pt-3 pb-2 flex-shrink-0">
@@ -217,22 +213,25 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                             </thead>
                             <tbody>
                                 {sortedEntries.map((entry, index) => {
-                                    const highlight = currentUser && entry.username === currentUser
-                                    const isSelected = selectedUser === entry
+                                    const highlight = currentUser && entry.username === currentUser;
+                                    const isSelected = selectedUser === entry;
                                     return (
                                         <tr
                                             key={`${entry.username}-${entry.solved_at}-${index}`}
                                             data-user-row
-                                            className={`border-b border-gray-700/30 transition hover:bg-gray-700/20 cursor-pointer ${highlight ? "bg-blue-900/40 font-bold" : ""
-                                                } ${isSelected ? "bg-purple-900/30" : ""}`}
+                                            className={`border-b border-gray-700/30 transition hover:bg-gray-700/20 cursor-pointer ${
+                                                highlight ? 'bg-blue-900/40 font-bold' : ''
+                                            } ${isSelected ? 'bg-purple-900/30' : ''}`}
                                             onClick={() => handleUserClick(entry)}
                                         >
                                             <td className="py-2 px-2">{getRankIcon(index)}</td>
                                             <td className="py-2 px-2 truncate max-w-[8rem]">{entry.username}</td>
                                             <td className="py-2 px-2">{entry.solve_duration.toFixed(2)}</td>
-                                            <td className="py-2 px-2 text-xs text-gray-400">{getRelativeTime(entry.solved_at)}</td>
+                                            <td className="py-2 px-2 text-xs text-gray-400">
+                                                {getRelativeTime(entry.solved_at)}
+                                            </td>
                                         </tr>
-                                    )
+                                    );
                                 })}
                             </tbody>
                         </table>
@@ -288,5 +287,5 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                 }
             `}</style>
         </div>
-    )
+    );
 }

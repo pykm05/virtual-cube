@@ -195,4 +195,4 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         console.log('disconnect');
     }
-};
+}

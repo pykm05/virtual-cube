@@ -14,6 +14,6 @@ export default class Player {
         this.status = RoomState.GAME_NOT_STARTED;
         this.solveTime = 0;
         this.isDNF = false;
-        this.moveList = ""
+        this.moveList = '';
     }
 }
