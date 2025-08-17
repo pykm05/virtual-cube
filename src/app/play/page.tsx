@@ -5,6 +5,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { Info } from 'lucide-react';
 import InstructionsModal from '@/components/modals/instruction';
+import LeaderboardModal from '@/components/modals/leaderboard';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { getSocket, Socket } from '@/lib/socket';
 import { useRouter } from 'next/navigation';
@@ -12,6 +13,7 @@ import { useRouter } from 'next/navigation';
 export default function PlayHome() {
     const [name, setName] = useState('');
     const [showInstructions, setShowInstructions] = useState(false);
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
     const [socket, setSocket] = useState<Socket>();
     const router = useRouter();
 
@@ -55,7 +57,9 @@ export default function PlayHome() {
                 <div className="text-center space-y-4">
                     <div className="space-y-2">
                         <h1 className="text-4xl font-bold text-white">Virtual Cube</h1>
-                        <p className="text-gray-300 text-lg font-medium">Compete. Solve. Conquer.</p>
+                        <p className="text-gray-300 text-lg font-medium">
+                            The digital Rubiks Cube Competition platform
+                        </p>
                     </div>
                 </div>
 
@@ -113,8 +117,16 @@ export default function PlayHome() {
                         </div>
                     </div>
                 </div>
+                <button
+                    type="submit"
+                    onClick={() => setShowLeaderboard(true)}
+                    className="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-gray-100 font-medium h-10 text-base rounded-lg transition-all duration-200 shadow-lg shadow-slate-700/20 hover:shadow-slate-600/30 hover:scale-[1.01] active:scale-[0.99] border border-slate-600 hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500/50"
+                >
+                    Leaderboard
+                </button>
             </div>
 
+            <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
             <InstructionsModal isOpen={showInstructions} onClose={() => setShowInstructions(false)} />
         </div>
     );

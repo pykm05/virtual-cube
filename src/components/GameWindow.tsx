@@ -59,6 +59,10 @@ export default function GameWindow() {
         // I would have loved to put that call elsewhere, but we need the socket and the cube
         if (emitter) {
             window.addEventListener('keydown', async (e) => {
+                if (e.repeat) {
+                    return;
+                }
+
                 // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
                 if (await cube.isSolved()) {
                     return;
