@@ -50,7 +50,7 @@ class Cube {
 
         if (scramble) {
             this.instantScramble(scramble);
-    }
+        }
 
         this.render();
     }
@@ -126,7 +126,6 @@ class Cube {
 
         return true;
     }
-
 
     instantScramble(scramble: string) {
         const moves = scramble.trim().split(/\s+/);
@@ -336,9 +335,8 @@ class Cube {
             quaternion.setFromAxisAngle(axisVector, targetRotation);
 
             affectedPieces.forEach((piece) => {
-                piece.position.sub(new THREE.Vector3(0, 0, 0)); 
+                piece.position.sub(new THREE.Vector3(0, 0, 0));
                 piece.position.applyQuaternion(quaternion);
-
 
                 piece.quaternion.premultiply(quaternion);
                 piece.rotation.setFromQuaternion(piece.quaternion);

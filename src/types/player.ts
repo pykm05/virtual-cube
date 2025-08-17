@@ -8,10 +8,7 @@ export default class Player {
     public isDNF: boolean;
     public moveList: string;
 
-    constructor(
-        id: string,
-        username: string,
-    ) {
+    constructor(id: string, username: string) {
         this.id = id;
         this.username = username;
         this.status = RoomState.GAME_NOT_STARTED;
