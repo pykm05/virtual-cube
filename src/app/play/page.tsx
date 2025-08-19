@@ -37,7 +37,6 @@ export default function PlayHome() {
             router.push(`/play/${roomID}`);
             socket.off('room:found');
         });
-
     };
 
     return (

@@ -68,7 +68,6 @@ export default function GameModal() {
                     <div>{tied ? 'Tie' : won ? 'You won!' : 'You lost'}</div>
                 </div>
 
-
                 {!tied && (
                     <div className="flex">
                         <div className="flex flex-1 justify-center">
