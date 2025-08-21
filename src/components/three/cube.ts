@@ -158,13 +158,13 @@ class Cube {
                 action = CubeAction.turn;
                 axis = 'y';
                 layer = 1;
-                direction = Direction.forward;
+                direction = Direction.backward;
                 break;
             case Notation.U_PRIME:
                 action = CubeAction.turn;
                 axis = 'y';
                 layer = 1;
-                direction = Direction.backward;
+                direction = Direction.forward;
                 break;
             case Notation.D:
                 action = CubeAction.turn;
@@ -253,13 +253,13 @@ class Cube {
             case Notation.E:
                 action = CubeAction.turn;
                 axis = 'y';
-                layer = -1;
+                layer = 0;
                 direction = Direction.forward;
                 break;
             case Notation.E_PRIME:
                 action = CubeAction.turn;
                 axis = 'y';
-                layer = -1;
+                layer = 0;
                 direction = Direction.backward;
                 break;
             case Notation.y:
@@ -349,10 +349,10 @@ class Cube {
     handleInput(n: Notation) {
         switch (n) {
             case Notation.U:
-                this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
+                this.addToQueue(CubeAction.turn, 'y', 1, Direction.backward);
                 break;
             case Notation.U_PRIME:
-                this.addToQueue(CubeAction.turn, 'y', 1, Direction.backward);
+                this.addToQueue(CubeAction.turn, 'y', 1, Direction.forward);
                 break;
             case Notation.D:
                 this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
@@ -397,10 +397,10 @@ class Cube {
                 this.addToQueue(CubeAction.turn, 'z', 0, Direction.forward);
                 break;
             case Notation.E:
-                this.addToQueue(CubeAction.turn, 'y', -1, Direction.forward);
+                this.addToQueue(CubeAction.turn, 'y', 0, Direction.forward);
                 break;
             case Notation.E_PRIME:
-                this.addToQueue(CubeAction.turn, 'y', -1, Direction.backward);
+                this.addToQueue(CubeAction.turn, 'y', 0, Direction.backward);
                 break;
 
             // layer default to 1
