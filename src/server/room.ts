@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import Player from '@/types/player';
+import { Player, PlayerState } from '@/types/player';
 import { RoomState } from '@/types/RoomState';
 import { generate3x3Scramble } from './lib/utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
@@ -49,13 +49,26 @@ export default class Room {
         this.players = this.players.filter((p) => p.id !== socketID);
     }
 
+    public playerLeft(socketID: string) {
+        const player = this.players.find((p) => p.id == socketID);
+
+        if (!player) {
+            console.log(`[WARN] Called room.playerLeft with an invalid socket id: ${socketID}`);
+            return;
+        }
+
+        player.state = PlayerState.Left;
+        this.updateGameStatus();
+    }
+
     public playerDNF(socketID: string) {
+        // TODO: Swap this logic for this.players.find( using the p.id == socketID)
         const playerIndex = this.findPlayerIndex(socketID);
 
         if (playerIndex != -1) {
             const player = this.players[playerIndex];
             player.isDNF = true;
-            player.status = RoomState.GAME_ENDED;
+            player.state = PlayerState.Left;
             this.rankings.push(player);
             this.io.to(socketID).emit('player:completed_solve', player);
         }
@@ -79,30 +92,35 @@ export default class Room {
 
         player.moveList += ' ' + notationString;
 
-        if (player.status != RoomState.INSPECTION_TIME || isCubeRotation(notation)) {
+        if (player.state != PlayerState.Inspection || isCubeRotation(notation)) {
             return;
         }
 
         if (this.roomStatus == RoomState.INSPECTION_TIME) {
-            console.log('');
             this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
             this.updateGameStatus();
         }
 
         this.io.to(socketID).emit('solve:in_progress');
-        this.players[this.findPlayerIndex(socketID)].status = RoomState.SOLVE_IN_PROGRESS;
+        player.state = PlayerState.Solving;
     }
 
     public playerSolveComplete(socketID: string) {
-        if (this.rankings.some((player) => player.id == socketID)) return;
+        const player = this.players.find((p) => p.id == socketID);
 
-        const player = this.players[this.findPlayerIndex(socketID)];
-        player.status = RoomState.GAME_ENDED;
+        if (!player) {
+            console.log(`[WARN] Called room.playerSolveComplete with an invalid socket id: ${socketID}`);
+            return;
+        }
+
         player.solveTime = Number(player.solveTime.toFixed(2));
+        player.state = PlayerState.Solved;
+
         this.io.to(socketID).emit('player:completed_solve', player);
 
+        // TODO: Rethink that
+        // Rank players by their solve time
         let inserted = false;
-
         for (let i = 0; i < this.rankings.length; i++) {
             if (this.rankings[i].solveTime > player.solveTime) {
                 inserted = true;
@@ -110,13 +128,26 @@ export default class Room {
                 break;
             }
         }
-
         if (!inserted) this.rankings.push(player);
 
-        if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+        // TODO: Make sure this has the same logic as the commented bloc under
+        // (my brain is fried rn)
+        if (
+            this.players.every(
+                (player) =>
+                    player.state == PlayerState.Solved ||
+                    player.state == PlayerState.Left ||
+                    player.state == PlayerState.DNF
+            )
+        ) {
             console.log('rankings', this.rankings);
             this.io.to(socketID).emit('game:complete', this.rankings);
         }
+
+        // if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+        //     console.log('rankings', this.rankings);
+        //     this.io.to(socketID).emit('game:complete', this.rankings);
+        // }
     }
 
     public processRematchRequest(socketID: string) {
@@ -143,6 +174,86 @@ export default class Room {
             );
 
         return false;
+    }
+
+    private update() {
+        console.log(`[INFO] Current room state: ${this.roomStatus}\nPlayers state:`);
+        for (const player of this.players) {
+            console.log(`\t ${player.id} - ${player.state}`);
+        }
+
+        switch (this.roomStatus) {
+            case RoomState.GAME_NOT_STARTED:
+                if (this.players.length != this.maxPlayerCount) {
+                    // Waiting for room to fill
+                    break;
+                }
+
+                // Notify all players that the game has started
+                for (const player of this.players) {
+                    if (player.state != PlayerState.Inspection) continue;
+
+                    this.io.to(player.id).emit('game:start', this.players, this.scramble);
+                    player.state = PlayerState.Inspection;
+                }
+                console.log(`[INFO] Game ${this.roomID} is starting`);
+                this.roomStatus = RoomState.INSPECTION_TIME;
+
+                // Re run the method to instantly start the inspection phase
+                this.update();
+                break;
+            case RoomState.INSPECTION_TIME:
+                // This could be an issue if this method is ran multiple times here
+                // TODO: Try putting this call at the end of the GAME_NOT_STARTED case
+                //
+                // We previously used an argument here (RoomState.INSPECTION_TIME) but it was not read by the client
+                this.io.to(this.roomID).emit('inspection:start');
+
+                // Keep players updated about the remaining inspection time
+                const inspectionTimer = setInterval(() => {
+                    this.inspectionTime--;
+
+                    // Send timer updates to players that are still in inspection
+                    // 
+                    // Love `.filter` but in TS it copies the array i don't think it's a good idea
+                    for (const player of this.players) {
+                        if (player.state != PlayerState.Inspection) continue;
+
+                        this.io.to(player.id).emit('timer:update', this.inspectionTime);
+                    }
+
+                    // Inspection time's up
+                    if (this.inspectionTime == 0) {
+                        this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+
+                        // Notifies players that are still in inspection that time is up
+                        for (const player of this.players) {
+                            if (player.state != PlayerState.Inspection) continue;
+
+                            player.state = PlayerState.Solving;
+                            this.io.to(player.id).emit('solve:in_progress');
+                        }
+                    }
+
+                    // All players have started their solve, let's fast forward
+                    if (this.players.every((player) => player.state != PlayerState.Inspection)) {
+                        this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+                    }
+
+                    // Exit the timout loop if we changed the room state
+                    // This also acts as a guard is something else modifies that state
+                    if (this.roomStatus != RoomState.INSPECTION_TIME) {
+                        this.update();
+                        clearTimeout(inspectionTimer);
+                    }
+                }, 1000);
+
+                break;
+            case RoomState.SOLVE_IN_PROGRESS:
+                break;
+            case RoomState.GAME_ENDED:
+                break;
+        }
     }
 
     private updateGameStatus() {
