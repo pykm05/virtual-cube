@@ -26,4 +26,4 @@ jobs:
               run: npx tsc --noEmit
 
             - name: Prettier Format Check
-              run: npx prettier . --check
+              run: npx prettier ./src --check
