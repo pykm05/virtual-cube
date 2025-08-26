@@ -32,21 +32,29 @@ export default class Room {
         return this.maxPlayerCount;
     }
 
-    public startGame() {
-        if (this.roomStatus !== RoomState.NOT_STARTED) return;
+    public tryStartGame() {
+        // If we're still waiting for players or if a player is not waiting for the game to start
+        if (
+            this.players.length != this.maxPlayerCount ||
+            this.players.some((p) => p.state != PlayerState.NOT_YET_STARTED)
+        ) {
+            return;
+        }
 
-        this.updateGameStatus();
+        this.startInspection();
     }
 
     public addPlayer(socket: Socket, player: Player) {
-        if (this.players.length >= this.maxPlayerCount || this.findPlayerIndex(socket.id) != -1) {
+        if (this.players.length >= this.maxPlayerCount || this.players.some((p) => p.id == socket.id)) {
             socket.to(socket.id).emit('join:invalid');
-        } else {
-            this.players.push(player);
+            return;
         }
+
+        this.players.push(player);
+        this.tryStartGame();
     }
 
-    // FIXME: Can't this break if the game has started ?
+    // FIXME: Can't this break if the game has already started ?
     public removePlayer(socketID: string) {
         this.players = this.players.filter((p) => p.id !== socketID);
     }
@@ -321,37 +329,5 @@ export default class Room {
 
             upload(player.username, player.solveTime, player.moveList);
         }
-    }
-
-    private updateGameStatus() {
-        console.log(`[INFO] Current room state: ${this.roomStatus}\nPlayers state:`);
-        for (const player of this.players) {
-            console.log(`\t ${player.id} - ${player.state}`);
-        }
-        switch (this.roomStatus) {
-            case RoomState.NOT_STARTED:
-                if (this.players.length != this.maxPlayerCount) {
-                    // Waiting for room to fill
-                    return;
-                }
-
-                this.startInspection();
-                break;
-            case RoomState.PLAYING:
-                break;
-            case RoomState.ENDED:
-                break;
-
-            case RoomState.CANCELLED:
-                break;
-        }
-    }
-
-    private findPlayerIndex(socketID: string) {
-        for (let i = 0; i < this.players.length; i++) {
-            if (socketID == this.players[i].id) return i;
-        }
-
-        return -1;
     }
 }
