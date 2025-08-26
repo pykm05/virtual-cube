@@ -46,6 +46,7 @@ export default class Room {
         }
     }
 
+    // FIXME: Can't this break if the game has started ?
     public removePlayer(socketID: string) {
         this.players = this.players.filter((p) => p.id !== socketID);
     }

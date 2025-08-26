@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import Room from '@/server/room.ts';
-import { Player } from '@/types/player.ts';
+import { Player, PlayerState } from '@/types/player.ts';
 import { RoomState } from '@/types/RoomState.ts';
 import { genRanHex } from '@/server/lib/utils.ts';
 export default function initializeGameHandlers(io: Server, socket: Socket) {
@@ -145,9 +145,10 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         if (currentRoom) {
             currentRoom.removePlayer(player.id);
             socket.leave(currentRoom.roomID);
-            player.status = RoomState.NOT_STARTED;
+
+            player.state = PlayerState.NOT_YET_STARTED;
             player.solveTime = 0;
-            player.isDNF = false;
+            player.moveList = '';
         }
 
         socket.join(room.roomID);
@@ -194,7 +195,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
             return;
         }
         if (room) room.playerLeft(player.id);
-        
+
         console.log('[INFO] A player has disconnected');
     }
 }
