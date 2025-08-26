@@ -8,15 +8,16 @@ import { supabase } from './db';
 export default class Room {
     public roomID: string;
     public players: Player[] = [];
-    public roomStatus = RoomState.GAME_NOT_STARTED;
+    public roomStatus = RoomState.NOT_STARTED;
 
     // 20 moves scrambles are linked to db structure, mind that if you ever change this
     public scramble: string = generate3x3Scramble(20);
 
-    private inspectionTime = 15;
-    private solveTime: number = 0;
     private maxPlayerCount = 2;
+
+    private inspectionTime = 15;
     private solveTimeLimit: number = 300; // 300
+
     private rematchQueue: string[] = [];
     private io: Server;
     private rankings: Player[] = [];
@@ -32,7 +33,7 @@ export default class Room {
     }
 
     public startGame() {
-        if (this.roomStatus !== RoomState.GAME_NOT_STARTED) return;
+        if (this.roomStatus !== RoomState.NOT_STARTED) return;
 
         this.updateGameStatus();
     }
@@ -57,31 +58,24 @@ export default class Room {
             return;
         }
 
-        player.state = PlayerState.Left;
-        this.updateGameStatus();
-    }
-
-    public playerDNF(socketID: string) {
-        // TODO: Swap this logic for this.players.find( using the p.id == socketID)
-        const playerIndex = this.findPlayerIndex(socketID);
-
-        if (playerIndex != -1) {
-            const player = this.players[playerIndex];
-            player.isDNF = true;
-            player.state = PlayerState.Left;
-            this.rankings.push(player);
-            this.io.to(socketID).emit('player:completed_solve', player);
-        }
+        player.state = PlayerState.LEFT;
+        // Still unsure of that `LEFT` state, so to be sure we don't fuck up the logic
+        // let's put their time as the max so they don't accidentally win :)
+        player.solveTime = this.solveTimeLimit;
+        this.rankings.push(player);
+        this.io.to(socketID).emit('player:completed_solve', player);
     }
 
     public handleInput(socketID: string, notationString: string) {
-        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
-
         let player = this.players.find((p) => p.id == socketID);
 
+        // If the player is not here, there is no point sending the event to the ws room
         if (!player) {
             return;
         }
+
+        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
+
 
         const notation = notationFromString(notationString);
 
@@ -92,17 +86,17 @@ export default class Room {
 
         player.moveList += ' ' + notationString;
 
-        if (player.state != PlayerState.Inspection || isCubeRotation(notation)) {
+        if (player.state != PlayerState.INSPECTION || isCubeRotation(notation)) {
             return;
         }
 
-        if (this.roomStatus == RoomState.INSPECTION_TIME) {
-            this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
-            this.updateGameStatus();
+        // If that player is the first one start solving, start the solve timer
+        if (this.players.every((p) => p.state == PlayerState.INSPECTION)) {
+            this.startSolve();
         }
 
+        player.state = PlayerState.SOLVING;
         this.io.to(socketID).emit('solve:in_progress');
-        player.state = PlayerState.Solving;
     }
 
     public playerSolveComplete(socketID: string) {
@@ -114,7 +108,7 @@ export default class Room {
         }
 
         player.solveTime = Number(player.solveTime.toFixed(2));
-        player.state = PlayerState.Solved;
+        player.state = PlayerState.SOLVED;
 
         this.io.to(socketID).emit('player:completed_solve', player);
 
@@ -135,8 +129,8 @@ export default class Room {
         if (
             this.players.every(
                 (player) =>
-                    player.state == PlayerState.Solved ||
-                    player.state == PlayerState.Left ||
+                    player.state == PlayerState.SOLVED ||
+                    player.state == PlayerState.LEFT ||
                     player.state == PlayerState.DNF
             )
         ) {
@@ -176,198 +170,180 @@ export default class Room {
         return false;
     }
 
-    private update() {
-        console.log(`[INFO] Current room state: ${this.roomStatus}\nPlayers state:`);
-        for (const player of this.players) {
-            console.log(`\t ${player.id} - ${player.state}`);
+    // Switches the game state to PLAYING, informs the players and kickstarts the inspection loop
+    private startInspection() {
+        if (
+            this.players.length != this.maxPlayerCount ||
+            !this.players.every((p) => p.state == PlayerState.NOT_YET_STARTED) // needed ?
+        ) {
+            console.log(
+                `[WARN] Called room.startInspection but some players are missing or a player has already started`
+            );
+            return;
         }
 
-        switch (this.roomStatus) {
-            case RoomState.GAME_NOT_STARTED:
-                if (this.players.length != this.maxPlayerCount) {
-                    // Waiting for room to fill
-                    break;
-                }
+        this.roomStatus = RoomState.PLAYING;
 
-                // Notify all players that the game has started
+        // Notify all players that the game has started
+        for (const player of this.players) {
+            if (player.state != PlayerState.NOT_YET_STARTED) continue;
+
+            this.io.to(player.id).emit('game:start', this.players, this.scramble);
+            player.state = PlayerState.INSPECTION;
+        }
+
+        console.log(`[INFO] Game ${this.roomID} is starting`);
+
+        // Sync up the clients to start their inspection (probably could be removed if clients reacted to the game:start)
+        this.io.to(this.roomID).emit('inspection:start');
+
+        // Since we switched to PLAYING, let's kickstart the inspection
+        // TODO: Rework this callback to use only one loop
+        const inspection_update_interval = setInterval(() => {
+            console.log("[DEBUG] Inspection loop");
+            this.inspectionTime--;
+
+            // Send timer updates to players that are still in inspection
+            for (const player of this.players) {
+                if (player.state != PlayerState.INSPECTION) continue;
+
+                this.io.to(player.id).emit('timer:update', this.inspectionTime);
+            }
+
+            // Inspection time's up
+            if (this.inspectionTime == 0) {
+                // Notifies players that are still in inspection that time is up
                 for (const player of this.players) {
-                    if (player.state != PlayerState.Inspection) continue;
+                    if (player.state != PlayerState.INSPECTION) continue;
 
-                    this.io.to(player.id).emit('game:start', this.players, this.scramble);
-                    player.state = PlayerState.Inspection;
+                    player.state = PlayerState.SOLVING;
+                    this.io.to(player.id).emit('solve:in_progress');
                 }
-                console.log(`[INFO] Game ${this.roomID} is starting`);
-                this.roomStatus = RoomState.INSPECTION_TIME;
+            }
 
-                // Re run the method to instantly start the inspection phase
-                this.update();
-                break;
-            case RoomState.INSPECTION_TIME:
-                // This could be an issue if this method is ran multiple times here
-                // TODO: Try putting this call at the end of the GAME_NOT_STARTED case
-                //
-                // We previously used an argument here (RoomState.INSPECTION_TIME) but it was not read by the client
-                this.io.to(this.roomID).emit('inspection:start');
+            // Make sure to clear the interval if all players left the inspection state
+            if (this.players.every((p) => p.state != PlayerState.INSPECTION)) {
+                clearInterval(inspection_update_interval);
+            }
+        }, 1000);
+    }
 
-                // Keep players updated about the remaining inspection time
-                const inspectionTimer = setInterval(() => {
-                    this.inspectionTime--;
+    // At least one player is solving
+    private startSolve() {
+        // I wanted to add a player state condition here, but it might be overkill
+        if (this.players.length != this.maxPlayerCount) {
+            console.log('[WARN] Called room.startSolve but a player is missing');
+            return;
+        }
 
-                    // Send timer updates to players that are still in inspection
-                    // 
-                    // Love `.filter` but in TS it copies the array i don't think it's a good idea
-                    for (const player of this.players) {
-                        if (player.state != PlayerState.Inspection) continue;
+        console.log(`[INFO] Game ${this.roomID} is starting its solve update loop`);
 
-                        this.io.to(player.id).emit('timer:update', this.inspectionTime);
-                    }
+        const update_tps = 100;
 
-                    // Inspection time's up
-                    if (this.inspectionTime == 0) {
-                        this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
+        const solve_update_interval = setInterval(() => {
+            // Update player's time and notify them
+            for (const player of this.players) {
+                if (player.state != PlayerState.SOLVING) continue;
 
-                        // Notifies players that are still in inspection that time is up
-                        for (const player of this.players) {
-                            if (player.state != PlayerState.Inspection) continue;
+                player.solveTime += 1 / update_tps;
 
-                            player.state = PlayerState.Solving;
-                            this.io.to(player.id).emit('solve:in_progress');
-                        }
-                    }
+                this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
 
-                    // All players have started their solve, let's fast forward
-                    if (this.players.every((player) => player.state != PlayerState.Inspection)) {
-                        this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
-                    }
+                // If they ran out of time, call this neat function
+                if (player.solveTime >= this.solveTimeLimit) {
+                    // TODO: Check that please
+                    player.state = PlayerState.DNF;
+                }
+            }
 
-                    // Exit the timout loop if we changed the room state
-                    // This also acts as a guard is something else modifies that state
-                    if (this.roomStatus != RoomState.INSPECTION_TIME) {
-                        this.update();
-                        clearTimeout(inspectionTimer);
-                    }
-                }, 1000);
+            // TODO: Handle thoses 3 cases more gracefully
 
-                break;
-            case RoomState.SOLVE_IN_PROGRESS:
-                break;
-            case RoomState.GAME_ENDED:
-                break;
+            // A player had left
+            if (this.players.some((player) => player.state == PlayerState.LEFT)) {
+                console.log(`[WARN] A player has left during the solve`);
+            }
+
+            // A player has ran out of time
+            if (this.players.some((player) => player.state == PlayerState.DNF)) {
+                console.log(`[WARN] A player has left during the solve`);
+            }
+
+            // All players finished their solve
+            if (this.players.every((player) => player.state == PlayerState.SOLVED)) {
+                clearInterval(solve_update_interval);
+
+                for (const player of this.players) {
+                    // Round the time to 10^-2
+                    player.solveTime = Number(player.solveTime.toFixed(2));
+
+                    // Notify the player that their solve has been registered
+                    this.io.to(player.id).emit('player:completed_solve', player);
+                }
+
+
+                // Wrap up, save score, rematch ?
+                this.gameEnd()
+            }
+        }, 1000 / update_tps);
+    }
+
+    // All player have finished their solve, ran out of time or left
+    // Write solves to db, cleanup the room, prepare rematch
+    private gameEnd() {
+        if (this.players.some((p) => p.state != PlayerState.SCORES)) {
+            console.log(`[WARN] Called room.gameEnd but some player is still playing`);
+            return;
+        }
+
+        for (const player of this.players){
+            this.rankings.push(player);
+        }
+
+        console.log(`[INFO] Game ${this.roomID} has ended`);
+
+        const currentDate = new Date(Date.now()).toISOString();
+
+        const upload = async (username: string, solve_duration: number, move_list: string) => {
+            let { error } = await supabase.from('leaderboard').insert({
+                username: username,
+                solve_duration: solve_duration,
+                solved_at: currentDate,
+                scramble: this.scramble,
+                move_list: move_list,
+            });
+
+            if (error) {
+                console.log(`[ERROR] Failed to upload to DB due to ${JSON.stringify(error)}`);
+            }
+        };
+
+        for (const player of this.players) {
+            if (player.state != PlayerState.SOLVED) continue;
+
+            upload(player.username, player.solveTime, player.moveList);
         }
     }
 
     private updateGameStatus() {
-        console.log('current room state: ', this.roomStatus);
+        console.log(`[INFO] Current room state: ${this.roomStatus}\nPlayers state:`);
+        for (const player of this.players) {
+            console.log(`\t ${player.id} - ${player.state}`);
+        }
         switch (this.roomStatus) {
-            case RoomState.GAME_NOT_STARTED:
-                if (this.players.length == this.maxPlayerCount) {
-                    for (const player of this.players) {
-                        if (player.status == RoomState.GAME_NOT_STARTED) {
-                            // console.log(this.scramble);
-                            this.io.to(player.id).emit('game:start', this.players, this.scramble);
-                            player.status = RoomState.INSPECTION_TIME;
-                        }
-                    }
-
-                    console.log('game start');
-                    this.roomStatus = RoomState.INSPECTION_TIME;
-                    this.updateGameStatus();
-                }
-                break;
-            case RoomState.INSPECTION_TIME:
-                this.io.to(this.roomID).emit('inspection:start', RoomState.INSPECTION_TIME);
-
-                const inspectionTimer = setInterval(() => {
-                    this.inspectionTime--;
-
-                    for (const player of this.players) {
-                        if (player.status == RoomState.INSPECTION_TIME)
-                            this.io.to(player.id).emit('timer:update', this.inspectionTime);
-                    }
-
-                    if (
-                        this.inspectionTime == 0 ||
-                        !this.players.some((player) => player.status == RoomState.INSPECTION_TIME)
-                    ) {
-                        for (const player of this.players) {
-                            if (player.status == RoomState.INSPECTION_TIME) {
-                                this.io.to(player.id).emit('solve:in_progress');
-                                player.status = RoomState.SOLVE_IN_PROGRESS;
-                            }
-                        }
-
-                        if (this.roomStatus == RoomState.INSPECTION_TIME) {
-                            this.roomStatus = RoomState.SOLVE_IN_PROGRESS;
-                            this.updateGameStatus();
-                        }
-
-                        clearTimeout(inspectionTimer);
-                    }
-                }, 1000);
-                break;
-            case RoomState.SOLVE_IN_PROGRESS:
-                const solveTimer = setInterval(() => {
-                    this.solveTime += 0.01;
-
-                    for (const player of this.players) {
-                        if (player.status == RoomState.SOLVE_IN_PROGRESS) {
-                            player.solveTime += 0.01;
-
-                            this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
-
-                            if (player.solveTime >= this.solveTimeLimit) {
-                                this.playerDNF(player.id);
-                            }
-                        }
-                    }
-
-                    if (!this.players.some((player) => player.status != RoomState.GAME_ENDED)) {
-                        for (const player of this.players) {
-                            this.rankings.push(player);
-                            player.status = RoomState.GAME_ENDED;
-                            player.solveTime = Number(player.solveTime.toFixed(2));
-                            this.io.to(player.id).emit('player:completed_solve', player);
-                        }
-
-                        if (this.players.some((player) => player.isDNF))
-                            console.log('GAME ENDED: PLAYER DNF/DISCONNECTED');
-                        else console.log('GAME ENDED: ALL SOLVES COMPLETE');
-
-                        this.io.to(this.roomID).emit('game:complete', this.rankings);
-
-                        if (this.roomStatus == RoomState.SOLVE_IN_PROGRESS) {
-                            this.roomStatus = RoomState.GAME_ENDED;
-                            this.updateGameStatus();
-                        }
-
-                        clearTimeout(solveTimer);
-                    }
-                }, 10);
-                break;
-            case RoomState.GAME_ENDED:
-                console.log('GAME HAS ENDED');
-
-                const currentDate = new Date(Date.now()).toISOString();
-
-                const upload = async (username: string, solve_duration: number, move_list: string) => {
-                    let { error } = await supabase.from('leaderboard').insert({
-                        username: username,
-                        solve_duration: solve_duration,
-                        solved_at: currentDate,
-                        scramble: this.scramble,
-                        move_list: move_list,
-                    });
-
-                    if (error) {
-                        console.log(`Failed to upload to DB due to ${JSON.stringify(error)}`);
-                    }
-                };
-                for (const player of this.players) {
-                    if (!player.isDNF) upload(player.username, player.solveTime, player.moveList);
+            case RoomState.NOT_STARTED:
+                if (this.players.length != this.maxPlayerCount) {
+                    // Waiting for room to fill
+                    return;
                 }
 
+                this.startInspection();
                 break;
-            default:
+            case RoomState.PLAYING:
+                break;
+            case RoomState.ENDED:
+                break;
+
+            case RoomState.CANCELLED:
                 break;
         }
     }

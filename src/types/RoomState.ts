@@ -1,6 +1,7 @@
 export enum RoomState {
-    GAME_NOT_STARTED = 'Game not started',
-    INSPECTION_TIME = 'Cube inspection',
-    SOLVE_IN_PROGRESS = 'Solve in progress',
-    GAME_ENDED = 'Game complete',
+    NOT_STARTED,
+    PLAYING,
+    // Maybe add some kind of state for the transition from playing to ended, for a check & db write etc
+    ENDED,
+    CANCELLED,
 }
