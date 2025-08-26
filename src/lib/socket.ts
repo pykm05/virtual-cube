@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import Player from '@/types/player';
+import { Player } from '@/types/player';
 
 const NEXT_PUBLIC_API_URL = 'http://localhost:4000/';
 
