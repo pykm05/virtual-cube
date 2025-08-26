@@ -1,6 +1,4 @@
-// import { RoomState } from '@/types/RoomState.ts';
-
-export enum PlayerState{
+export enum PlayerState {
     // (default) Sychronisation state for when the game hasn't yet started
     NOT_YET_STARTED,
     INSPECTION,

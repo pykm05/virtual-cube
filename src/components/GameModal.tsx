@@ -73,10 +73,11 @@ export default function GameModal() {
                     <div className="flex">
                         <div className="flex flex-1 justify-center">
                             {
-                            // What ?
-                            !oppDNF && !won && (
-                                <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
-                            )}
+                                // What ?
+                                !oppDNF && !won && (
+                                    <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
+                                )
+                            }
                         </div>
                         <div className="flex flex-1 justify-center">
                             {won && <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />}

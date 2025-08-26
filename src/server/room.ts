@@ -77,7 +77,6 @@ export default class Room {
 
         this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
 
-
         const notation = notationFromString(notationString);
 
         if (!notation) {
@@ -201,7 +200,7 @@ export default class Room {
         // Since we switched to PLAYING, let's kickstart the inspection
         // TODO: Rework this callback to use only one loop
         const inspection_update_interval = setInterval(() => {
-            console.log("[DEBUG] Inspection loop");
+            console.log('[DEBUG] Inspection loop');
             this.inspectionTime--;
 
             // Send timer updates to players that are still in inspection
@@ -281,9 +280,8 @@ export default class Room {
                     this.io.to(player.id).emit('player:completed_solve', player);
                 }
 
-
                 // Wrap up, save score, rematch ?
-                this.gameEnd()
+                this.gameEnd();
             }
         }, 1000 / update_tps);
     }
@@ -296,7 +294,7 @@ export default class Room {
             return;
         }
 
-        for (const player of this.players){
+        for (const player of this.players) {
             this.rankings.push(player);
         }
 
