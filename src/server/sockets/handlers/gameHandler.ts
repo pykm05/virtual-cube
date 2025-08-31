@@ -44,6 +44,9 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Does not add the player to the room yet, that is done in roomJoined function
     */
     function joinRandomRoom() {
+        // FIXME: Do this cleanly
+        deps["rooms"] = deps["rooms"].filter(g => g.getActivePlayers().length != 0);
+
         const player = deps['players'].find((p) => p.id === socket.id);
 
         if (!player) {
@@ -78,6 +81,9 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Send all players in the room to a new room if all players accept the rematch
     */
     function joinRematchRoom() {
+        // FIXME: Do this cleanly
+        deps["rooms"] = deps["rooms"].filter(g => g.getActivePlayers().length != 0);
+
         const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
 
@@ -156,6 +162,12 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         socket.join(room.roomID);
         room.addPlayer(socket, player);
+
+        for (const room of deps["rooms"]){
+            room.debug()
+        }
+        
+        console.log(`All rooms: ${deps["rooms"].length}`);
 
         // Starts game and renders scramble when room is full
         room.tryStartGame();

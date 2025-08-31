@@ -24,13 +24,14 @@ function textForState(state: PlayerState): string {
         case PlayerState.SOLVED:
             return 'Waiting for opponent';
         case PlayerState.DNF:
-        case PlayerState.SCORES:
             return 'Game complete';
     }
 }
 
 export default function Game() {
     const [localState, setLocalState] = useState(PlayerState.NOT_YET_STARTED);
+    // const [oppState, setOppState] = useState(PlayerState.NOT_YET_STARTED);
+
     const [time, setTime] = useState(15);
 
     useEffect(() => {
@@ -41,12 +42,19 @@ export default function Game() {
         });
 
         socket.on('player:state_update', (id: string, state: PlayerState) => {
-            if (id != socket.id) {
-                // The event is about the opponent
+            if (id != socket.id){
+                // opp
                 return;
             }
-
             setLocalState(state);
+
+            // if (id == socket.id) {
+            //     console.log(`Local player state changed from ${localState} to ${state}`);
+            //     setLocalState(state);
+            // }else{
+            //     console.log(`Opp player state changed from ${oppState} to ${state}`);
+            //     setOppState(state);
+            // }
         });
     }, []);
 

@@ -75,8 +75,6 @@ export default function GameWindow() {
                     return;
                 }
 
-                console.log(`Sending move: ${move}`);
-
                 socket.emit('keyboard:input', socket.id, move);
             });
         }
@@ -109,6 +107,7 @@ export default function GameWindow() {
         const socket = getSocket();
 
         socket.on('game:start', (users: Player[], scramble: string) => {
+            console.log(`Starting game with ${users.length} players: `, ...users);
             for (let user of users) {
                 scrambleBuffer[user.id] = scramble;
             }

@@ -10,9 +10,6 @@ export enum PlayerState {
 
     // This only includes players that left while they were supposed to be playing
     DISCONNECTED, // Still unsure if it's actually needed or if just using DNF is better
-
-    // Game is done, the player is viewing the scores
-    SCORES,
 }
 
 export class Player {

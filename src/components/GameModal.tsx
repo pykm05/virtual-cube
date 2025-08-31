@@ -49,6 +49,7 @@ export default function GameModal() {
         if (!player) return;
         if (!socket) return;
 
+        // FIXME: This logic does not use PlayerState.DISCONNECTED
         const allPlayersDNF = checkAllPlayersDNF(playerRanks);
         const tied = allPlayersDNF || playerRanks[0].solveTime == playerRanks[1].solveTime;
         const opponent = socket.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
@@ -133,10 +134,10 @@ export default function GameModal() {
         });
 
         socket.on('game:complete', (rankings: Player[]) => {
-            const p = rankings.find(p => p.id == socket.id);
-            
-            if (!p){
-                console.log("DID NOT FIND SELF IN RANKINGS");
+            const p = rankings.find((p) => p.id == socket.id);
+
+            if (!p) {
+                console.log('[ERROR] DID NOT FIND SELF IN RANKINGS');
                 return;
             }
 
