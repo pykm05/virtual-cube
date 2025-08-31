@@ -11,8 +11,8 @@ import Image from 'next/image';
 // prettier-ignore
 // Stop removing the quotes on the keys
 const default_keybinds: KeybindMap = {
-    'f': Notation.U,
-    'j': Notation.U_PRIME,
+    'f': Notation.U_PRIME,
+    'j': Notation.U,
     's': Notation.D,
     'l': Notation.D_PRIME,
     'i': Notation.R,
