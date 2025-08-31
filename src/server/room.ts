@@ -32,9 +32,9 @@ export default class Room {
         this.roomID = roomID;
     }
 
-    public debug(){
+    public debug() {
         console.log(`[INFO] Room ${this.roomID} with ${this.players.length} players:`);
-        for (const player of this.players){
+        for (const player of this.players) {
             console.log(`\t${player.id}\n\t${player.username} - ${player.state}`);
         }
     }
@@ -65,9 +65,9 @@ export default class Room {
             socket.to(socket.id).emit('join:invalid');
             return;
         }
-            
+
         this.players.push(player);
-        console.log("Current players: ", ...this.players);
+        console.log('Current players: ', ...this.players);
         this.tryStartGame();
     }
 
@@ -108,7 +108,7 @@ export default class Room {
         }
 
         console.log(`Player move: ${notationString}`);
-        
+
         this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
 
         const notation = notationFromString(notationString);
@@ -120,10 +120,10 @@ export default class Room {
 
         player.moveList += ' ' + notationString;
 
-        console.log(`Player state: ${player.state}`)
+        console.log(`Player state: ${player.state}`);
 
         if (player.state != PlayerState.INSPECTION || isCubeRotation(notation)) {
-            console.log("player is not in inspection or move is a cube rotation")
+            console.log('player is not in inspection or move is a cube rotation');
             return;
         }
 
@@ -196,9 +196,7 @@ export default class Room {
 
     // Switches the game state to PLAYING, informs the players and kickstarts the inspection loop
     private startInspection() {
-        if (
-            this.players.length != this.maxPlayerCount
-        ) {
+        if (this.players.length != this.maxPlayerCount) {
             console.log(
                 `[WARN] Called room.startInspection but some players are missing or a player has already started`
             );
@@ -211,7 +209,7 @@ export default class Room {
 
         // Notify all players that the game has started
         for (const player of this.players) {
-            console.log("SENDING GAME:START");
+            console.log('SENDING GAME:START');
             this.io.to(player.id).emit('game:start', this.players, this.scramble);
 
             player.state = PlayerState.INSPECTION;
@@ -324,9 +322,7 @@ export default class Room {
         if (
             this.players.some(
                 (p) =>
-                    p.state != PlayerState.SOLVED &&
-                    p.state != PlayerState.DNF &&
-                    p.state != PlayerState.DISCONNECTED
+                    p.state != PlayerState.SOLVED && p.state != PlayerState.DNF && p.state != PlayerState.DISCONNECTED
             )
         ) {
             console.log(`[WARN] Called room.gameEnd but some player is still playing`);
@@ -334,7 +330,7 @@ export default class Room {
         }
 
         this.roomStatus = RoomState.ENDED;
-        
+
         this.rankings = this.players.slice().sort((pa, pb) => {
             const pts = (p: Player): number => {
                 if (p.state == PlayerState.DISCONNECTED) {

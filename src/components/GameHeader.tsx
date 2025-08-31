@@ -42,7 +42,7 @@ export default function Game() {
         });
 
         socket.on('player:state_update', (id: string, state: PlayerState) => {
-            if (id != socket.id){
+            if (id != socket.id) {
                 // opp
                 return;
             }

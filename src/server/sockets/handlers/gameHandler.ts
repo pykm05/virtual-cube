@@ -45,7 +45,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     */
     function joinRandomRoom() {
         // FIXME: Do this cleanly
-        deps["rooms"] = deps["rooms"].filter(g => g.getActivePlayers().length != 0);
+        deps['rooms'] = deps['rooms'].filter((g) => g.getActivePlayers().length != 0);
 
         const player = deps['players'].find((p) => p.id === socket.id);
 
@@ -82,7 +82,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     */
     function joinRematchRoom() {
         // FIXME: Do this cleanly
-        deps["rooms"] = deps["rooms"].filter(g => g.getActivePlayers().length != 0);
+        deps['rooms'] = deps['rooms'].filter((g) => g.getActivePlayers().length != 0);
 
         const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
@@ -163,11 +163,11 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         socket.join(room.roomID);
         room.addPlayer(socket, player);
 
-        for (const room of deps["rooms"]){
-            room.debug()
+        for (const room of deps['rooms']) {
+            room.debug();
         }
-        
-        console.log(`All rooms: ${deps["rooms"].length}`);
+
+        console.log(`All rooms: ${deps['rooms'].length}`);
 
         // Starts game and renders scramble when room is full
         room.tryStartGame();
