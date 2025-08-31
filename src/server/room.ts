@@ -7,11 +7,15 @@ import { supabase } from './db';
 
 export default class Room {
     public roomID: string;
-    public players: Player[] = [];
     public roomStatus = RoomState.NOT_STARTED;
 
-    // 20 moves scrambles are linked to db structure, mind that if you ever change this
-    public scramble: string = generate3x3Scramble(20);
+    // NOTE: There is an assumption that **once a game is started, no player can be removed from this array**
+    // If they leave, mark them as left using their PlayerState, do not remove them from this list.
+    private players: Player[] = [];
+
+    // NOTE: 20 moves scrambles are linked to db structure, mind that if you ever change this
+    // public scramble: string = generate3x3Scramble(20);
+    private scramble: string = "L'";
 
     private maxPlayerCount = 2;
 
@@ -26,6 +30,11 @@ export default class Room {
         console.log(`New room initialized with:\n  Id: ${roomID}\n  Scramble: ${this.scramble}`);
         this.io = io;
         this.roomID = roomID;
+    }
+
+    // NOTE: Some code using that function uses the room.players array assumption from above
+    public getActivePlayers(): Player[] {
+        return this.players.filter((p) => p.state != PlayerState.DISCONNECTED);
     }
 
     public getMaxPlayerCount() {
@@ -54,11 +63,6 @@ export default class Room {
         this.tryStartGame();
     }
 
-    // FIXME: Can't this break if the game has already started ?
-    public removePlayer(socketID: string) {
-        this.players = this.players.filter((p) => p.id !== socketID);
-    }
-
     public playerLeft(socketID: string) {
         const player = this.players.find((p) => p.id == socketID);
 
@@ -67,12 +71,24 @@ export default class Room {
             return;
         }
 
-        player.state = PlayerState.LEFT;
-        // Still unsure of that `LEFT` state, so to be sure we don't fuck up the logic
+        // If the game has not started, easy, remove the player
+        // NOTE: Check room.players' note in room definition
+        if (this.roomStatus == RoomState.NOT_STARTED) {
+            this.players = this.players.filter((p) => p.id != player.id);
+            return;
+        }
+
+        // Else, it's more complicated
+        // We need to treat the player as someone that played, but left
+
+        player.state = PlayerState.DISCONNECTED;
+        this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+        // Still unsure of that `DISCONNECTED` state, so to be sure we don't fuck up the logic
         // let's put their time as the max so they don't accidentally win :)
         player.solveTime = this.solveTimeLimit;
         this.rankings.push(player);
-        this.io.to(socketID).emit('player:completed_solve', player);
+
+        // this.io.to(socketID).emit('player:completed_solve', player);
     }
 
     public handleInput(socketID: string, notationString: string) {
@@ -80,6 +96,7 @@ export default class Room {
 
         // If the player is not here, there is no point sending the event to the ws room
         if (!player) {
+            console.log(`[ERROR] Tried to call room.handleInput with an invalid socket id: '${socketID}'`);
             return;
         }
 
@@ -104,7 +121,7 @@ export default class Room {
         }
 
         player.state = PlayerState.SOLVING;
-        this.io.to(socketID).emit('solve:in_progress');
+        this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
     }
 
     public playerSolveComplete(socketID: string) {
@@ -117,39 +134,26 @@ export default class Room {
 
         player.solveTime = Number(player.solveTime.toFixed(2));
         player.state = PlayerState.SOLVED;
+        this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
 
-        this.io.to(socketID).emit('player:completed_solve', player);
-
-        // TODO: Rethink that
-        // Rank players by their solve time
-        let inserted = false;
-        for (let i = 0; i < this.rankings.length; i++) {
-            if (this.rankings[i].solveTime > player.solveTime) {
-                inserted = true;
-                this.rankings.splice(i, 0, player);
-                break;
-            }
-        }
-        if (!inserted) this.rankings.push(player);
-
-        // TODO: Make sure this has the same logic as the commented bloc under
-        // (my brain is fried rn)
-        if (
-            this.players.every(
-                (player) =>
-                    player.state == PlayerState.SOLVED ||
-                    player.state == PlayerState.LEFT ||
-                    player.state == PlayerState.DNF
-            )
-        ) {
-            console.log('rankings', this.rankings);
-            this.io.to(socketID).emit('game:complete', this.rankings);
-        }
-
-        // if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+        // // TODO: Make sure this has the same logic as the commented bloc under
+        // // (my brain is fried rn)
+        // if (
+        //     this.players.every(
+        //         (player) =>
+        //             player.state == PlayerState.SOLVED ||
+        //             player.state == PlayerState.DISCONNECTED ||
+        //             player.state == PlayerState.DNF
+        //     )
+        // ) {
         //     console.log('rankings', this.rankings);
         //     this.io.to(socketID).emit('game:complete', this.rankings);
         // }
+
+        // // if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
+        // //     console.log('rankings', this.rankings);
+        // //     this.io.to(socketID).emit('game:complete', this.rankings);
+        // // }
     }
 
     public processRematchRequest(socketID: string) {
@@ -192,18 +196,17 @@ export default class Room {
 
         this.roomStatus = RoomState.PLAYING;
 
+        console.log(`[INFO] Game ${this.roomID} is starting`);
+
         // Notify all players that the game has started
         for (const player of this.players) {
             if (player.state != PlayerState.NOT_YET_STARTED) continue;
 
             this.io.to(player.id).emit('game:start', this.players, this.scramble);
+
             player.state = PlayerState.INSPECTION;
+            this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
         }
-
-        console.log(`[INFO] Game ${this.roomID} is starting`);
-
-        // Sync up the clients to start their inspection (probably could be removed if clients reacted to the game:start)
-        this.io.to(this.roomID).emit('inspection:start');
 
         // Since we switched to PLAYING, let's kickstart the inspection
         // TODO: Rework this callback to use only one loop
@@ -225,7 +228,7 @@ export default class Room {
                     if (player.state != PlayerState.INSPECTION) continue;
 
                     player.state = PlayerState.SOLVING;
-                    this.io.to(player.id).emit('solve:in_progress');
+                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
                 }
             }
 
@@ -259,15 +262,20 @@ export default class Room {
 
                 // If they ran out of time, call this neat function
                 if (player.solveTime >= this.solveTimeLimit) {
-                    // TODO: Check that please
                     player.state = PlayerState.DNF;
+                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
                 }
             }
 
+            // If all players are still solving, no need to do all the following end game checks
+            if (this.players.every(p => p.state == PlayerState.SOLVING)){
+                return;
+            }
+            
             // TODO: Handle thoses 3 cases more gracefully
-
+            
             // A player had left
-            if (this.players.some((player) => player.state == PlayerState.LEFT)) {
+            if (this.players.some((player) => player.state == PlayerState.DISCONNECTED)) {
                 console.log(`[WARN] A player has left during the solve`);
             }
 
@@ -284,8 +292,9 @@ export default class Room {
                     // Round the time to 10^-2
                     player.solveTime = Number(player.solveTime.toFixed(2));
 
-                    // Notify the player that their solve has been registered
-                    this.io.to(player.id).emit('player:completed_solve', player);
+                    // Send all the players to the end game score screen
+                    player.state = PlayerState.SCORES;
+                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
                 }
 
                 // Wrap up, save score, rematch ?
@@ -297,16 +306,42 @@ export default class Room {
     // All player have finished their solve, ran out of time or left
     // Write solves to db, cleanup the room, prepare rematch
     private gameEnd() {
-        if (this.players.some((p) => p.state != PlayerState.SCORES)) {
+        if (
+            this.players.some(
+                (p) =>
+                    p.state == PlayerState.NOT_YET_STARTED ||
+                    p.state == PlayerState.INSPECTION ||
+                    p.state == PlayerState.SOLVING
+            )
+        ) {
             console.log(`[WARN] Called room.gameEnd but some player is still playing`);
             return;
         }
 
-        for (const player of this.players) {
-            this.rankings.push(player);
-        }
+        this.rankings = this.players.slice().sort((pa, pb) => {
+            const pts = (p: Player): number => {
+                if (p.state == PlayerState.DISCONNECTED) {
+                    return Infinity;
+                }
+
+                // DNF players should have their time at this.solveTimeLimit
+                // (Let's just add something to check that it is the case)
+                if (p.state == PlayerState.DNF && p.solveTime != this.solveTimeLimit) {
+                    console.log(
+                        `[BUG] room.gameEnd found a bug\nA player with the DNF state does not have its solve time equal to this.solveTimeLimit(${this.solveTimeLimit}): ${p.solveTime}`
+                    );
+                }
+
+                return p.solveTime;
+            };
+
+            return pts(pa) - pts(pb);
+        });
+
+        this.io.to(this.roomID).emit('game:complete', this.rankings);
 
         console.log(`[INFO] Game ${this.roomID} has ended`);
+        console.log(this.rankings);
 
         const currentDate = new Date(Date.now()).toISOString();
 

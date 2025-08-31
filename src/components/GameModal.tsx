@@ -47,10 +47,11 @@ export default function GameModal() {
 
     function displayResults() {
         if (!player) return;
+        if (!socket) return;
 
         const allPlayersDNF = checkAllPlayersDNF(playerRanks);
         const tied = allPlayersDNF || playerRanks[0].solveTime == playerRanks[1].solveTime;
-        const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
+        const opponent = socket.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
 
         const oppDNF = opponent.state == PlayerState.DNF;
         const won = oppDNF || opponent.id == playerRanks[1].id;
@@ -126,12 +127,20 @@ export default function GameModal() {
         const socket = getSocket();
         setSocket(socket);
 
-        socket.on('player:completed_solve', (p: Player) => {
-            setplayer(p);
+        socket.on('player:state_update', (id: string, state: PlayerState) => {
+            if (state != PlayerState.SOLVED || socket.id != id) return;
             setCubeSolved(true);
         });
 
         socket.on('game:complete', (rankings: Player[]) => {
+            const p = rankings.find(p => p.id == socket.id);
+            
+            if (!p){
+                console.log("DID NOT FIND SELF IN RANKINGS");
+                return;
+            }
+
+            setplayer(p);
             setGameComplete(true);
             setPlayerRanks(rankings);
         });

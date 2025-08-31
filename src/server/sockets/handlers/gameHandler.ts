@@ -54,7 +54,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         // Join a room that has space and hasn't started yet
         let room = deps['rooms'].find(
-            (r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.NOT_STARTED
+            (r) => r.roomStatus == RoomState.NOT_STARTED && r.getActivePlayers().length <= r.getMaxPlayerCount() - 1
         );
 
         // If no room found, create a new one
@@ -78,7 +78,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Send all players in the room to a new room if all players accept the rematch
     */
     function joinRematchRoom() {
-        const room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
 
         if (!player) {
@@ -97,8 +97,10 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         if (allPlayersAccepted) {
             console.log('Rematch accepted by all players, creating new room');
+            // FIXME: This is flawed, we only check for a room that has at least one empty space, which if found
+            // won't be able to receive all the players from the last game.
             let newRoom = deps['rooms'].find(
-                (r) => r.players.length <= r.getMaxPlayerCount() - 1 && r.roomStatus == RoomState.NOT_STARTED
+                (r) => r.roomStatus == RoomState.NOT_STARTED && r.getActivePlayers().length <= r.getMaxPlayerCount() - 1
             );
 
             // If no room found, create a new one
@@ -140,10 +142,11 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
 
         // if user is already in a room, leave that room first
-        let currentRoom = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        let currentRoom = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
 
         if (currentRoom) {
-            currentRoom.removePlayer(player.id);
+            currentRoom.playerLeft(player.id);
+            // currentRoom.removePlayer(player.id);
             socket.leave(currentRoom.roomID);
 
             player.state = PlayerState.NOT_YET_STARTED;
@@ -155,14 +158,14 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         room.addPlayer(socket, player);
 
         // Starts game and renders scramble when room is full
-        room.startGame();
+        room.tryStartGame();
     }
 
     /*
     Recieve keyboard input (AS CUBE NOTATION string) from a player and forward it to the room they are in
     */
     function handleKeyboardInput(senderID: string, notationString: string) {
-        let room = deps['rooms'].find((r) => r.players.some((p) => p.id === senderID));
+        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === senderID));
 
         if (!room) {
             console.log('Misdirected input, no room found');
@@ -177,17 +180,18 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Alert the room that a player has completed their solve
     */
     function handleSolveComplete(socketID: string) {
-        let room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         if (!room) return;
 
+        console.log('A player sent solveComplete');
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     }
 
     /*
-    Handle player disconnection, mark them as DNF in their room
+    Handle player disconnection, mark them as DISCONNECTED in their room
     */
     function disconnectPlayer() {
-        let room = deps['rooms'].find((r) => r.players.some((p) => p.id === socket.id));
+        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
 
         if (!player) {
@@ -196,6 +200,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
         if (room) room.playerLeft(player.id);
 
-        console.log('[INFO] A player has disconnected');
+        console.log(`[INFO] Player ${player.id} has disconnected`);
     }
 }
