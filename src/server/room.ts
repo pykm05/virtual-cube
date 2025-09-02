@@ -119,10 +119,7 @@ export default class Room {
 
         player.moveList += ' ' + notationString;
 
-        console.log(`Player state: ${player.state}`);
-
         if (player.state != PlayerState.INSPECTION || isCubeRotation(notation)) {
-            console.log('player is not in inspection or move is a cube rotation');
             return;
         }
 
@@ -192,7 +189,6 @@ export default class Room {
 
         // Notify all players that the game has started
         for (const player of this.players) {
-            console.log('SENDING GAME:START');
             this.io.to(player.id).emit('game:start', this.players, this.scramble);
 
             player.state = PlayerState.INSPECTION;
@@ -202,7 +198,6 @@ export default class Room {
         // Since we switched to PLAYING, let's kickstart the inspection
         // TODO: Rework this callback to use only one loop
         const inspection_update_interval = setInterval(() => {
-            console.log('[DEBUG] Inspection loop');
             this.inspectionTime--;
 
             // Send timer updates to players that are still in inspection
@@ -251,7 +246,7 @@ export default class Room {
 
                 this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
 
-                // If they ran out of time, call this neat function
+                // Player ran out of time
                 if (player.solveTime >= this.solveTimeLimit) {
                     player.state = PlayerState.DNF;
                     this.io.to(this.roomID).emit('player:state_update', player.id, player.state);

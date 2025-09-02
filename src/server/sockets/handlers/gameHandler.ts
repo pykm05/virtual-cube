@@ -168,12 +168,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         socket.join(room.roomID);
         room.addPlayer(socket, player);
 
-        for (const room of deps['rooms']) {
-            room.debug();
-        }
-
-        console.log(`All rooms: ${deps['rooms'].length}`);
-
         room.tryStartGame();
     }
 
@@ -199,7 +193,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         if (!room) return;
 
-        console.log('A player sent solveComplete');
         if (socket.id == socketID) room.playerSolveComplete(socketID);
     }
 
