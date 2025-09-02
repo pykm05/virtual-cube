@@ -10,12 +10,11 @@ export default class Room {
     public roomStatus = RoomState.NOT_STARTED;
 
     // NOTE: There is an assumption that **once a game is started, no player can be removed from this array**
-    // If they leave, mark them as left using their PlayerState, do not remove them from this list.
+    // If they leave, mark them as DISCONNECTED using their PlayerState, do not remove them from this list.
     private players: Player[] = [];
 
     // NOTE: 20 moves scrambles are linked to db structure, mind that if you ever change this
-    // public scramble: string = generate3x3Scramble(20);
-    private scramble: string = "L'";
+    public scramble: string = generate3x3Scramble(20);
 
     private maxPlayerCount = 2;
 
@@ -90,7 +89,7 @@ export default class Room {
         // We need to treat the player as someone that played, but left
 
         player.state = PlayerState.DISCONNECTED;
-        // TODO: re-add this
+        // TODO: re-add this while making sure it doesn't cause sync issues with chaining games on client side
         // this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
 
         // Still unsure of that `DISCONNECTED` state, so to be sure we don't fuck up the logic
@@ -158,9 +157,12 @@ export default class Room {
         }
 
         // If player is already queued to rematch and clicks rematch again, remove from queue
-        isQueued
-            ? (this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID))
-            : this.rematchQueue.push(socketID);
+        if (isQueued) {
+            this.rematchQueue = this.rematchQueue.filter((playerID) => playerID != socketID);
+        } else {
+            this.rematchQueue.push(socketID);
+        }
+
         isQueued = !isQueued;
 
         this.io
@@ -317,12 +319,13 @@ export default class Room {
                     return Infinity;
                 }
 
-                // DNF players should have their time at this.solveTimeLimit
+                // DNF players should have their time at `this.solveTimeLimit`
                 // (Let's just add something to check that it is the case)
                 if (p.state == PlayerState.DNF && p.solveTime != this.solveTimeLimit) {
                     console.log(
                         `[BUG] room.gameEnd found a bug\nA player with the DNF state does not have its solve time equal to this.solveTimeLimit(${this.solveTimeLimit}): ${p.solveTime}`
                     );
+                    p.solveTime == this.solveTimeLimit;
                 }
 
                 return p.solveTime;
@@ -331,7 +334,6 @@ export default class Room {
             return pts(playerA) - pts(playerB);
         });
 
-        
         // Make sure to send the rankings to the players
         this.io.to(this.roomID).emit('game:complete', this.rankings);
 
@@ -341,7 +343,6 @@ export default class Room {
         const currentDate = new Date(Date.now()).toISOString();
 
         const upload = async (username: string, solveDuration: number, moveList: string) => {
-
             let { error } = await supabase.from('leaderboard').insert({
                 username: username,
                 solve_duration: solveDuration,

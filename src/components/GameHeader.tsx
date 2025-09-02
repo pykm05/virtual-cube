@@ -3,13 +3,6 @@ import { useEffect, useState } from 'react';
 import { getSocket } from '@/lib/socket';
 import { PlayerState } from '@/types/player';
 
-// enum RoomState {
-//     GAME_NOT_STARTED = 'Awaiting players...',
-//     INSPECTION_TIME = 'Cube inspection',
-//     SOLVE_IN_PROGRESS = 'Solve in progress',
-//     GAME_ENDED = 'Game complete',
-// }
-
 function textForState(state: PlayerState): string {
     switch (state) {
         case PlayerState.DISCONNECTED:

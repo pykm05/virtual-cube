@@ -1,6 +1,8 @@
 export enum PlayerState {
-    // (default) Sychronisation state for when the game hasn't yet started
+    // (default) Sychronisation state for when the player is waiting for the game to start
     NOT_YET_STARTED,
+
+    // Playing
     INSPECTION,
     SOLVING,
 
@@ -9,7 +11,7 @@ export enum PlayerState {
     DNF,
 
     // This only includes players that left while they were supposed to be playing
-    DISCONNECTED, // Still unsure if it's actually needed or if just using DNF is better
+    DISCONNECTED,
 }
 
 export class Player {

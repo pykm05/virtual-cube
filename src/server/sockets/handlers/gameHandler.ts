@@ -87,14 +87,14 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
         const player = deps['players'].find((p) => p.id === socket.id);
 
-        if (!player) {
-            console.log('Player not found');
+        if (!room) {
+            console.log(`[WARN] Failed to send players to rematch room: Room not found (player id: ${socket.id})`);
             io.to(socket.id).emit('join:invalid');
             return;
         }
 
-        if (!room) {
-            console.log('Room not found');
+        if (!player) {
+            console.log(`[WARN] Failed to send player from game ${room.roomID} to rematch room: Player not found`);
             io.to(socket.id).emit('join:invalid');
             return;
         }
@@ -132,6 +132,12 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Removes player from any previous room they were in
     */
     function roomJoined(roomID: string) {
+        console.log('------------------- ROOM DEBUG -------------------');
+        for (const room of deps['rooms']) {
+            room.debug();
+        }
+        console.log('-------------------            -------------------');
+
         const room = deps['rooms'].find((r) => r.roomID === roomID);
         const player = deps['players'].find((p) => p.id === socket.id);
 
@@ -152,7 +158,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         if (currentRoom) {
             currentRoom.playerLeft(player.id);
-            // currentRoom.removePlayer(player.id);
             socket.leave(currentRoom.roomID);
 
             player.state = PlayerState.NOT_YET_STARTED;
@@ -169,7 +174,6 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         console.log(`All rooms: ${deps['rooms'].length}`);
 
-        // Starts game and renders scramble when room is full
         room.tryStartGame();
     }
 
