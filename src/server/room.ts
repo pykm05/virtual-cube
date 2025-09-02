@@ -147,25 +147,6 @@ export default class Room {
         player.solveTime = Number(player.solveTime.toFixed(2));
         player.state = PlayerState.SOLVED;
         this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
-
-        // // TODO: Make sure this has the same logic as the commented bloc under
-        // // (my brain is fried rn)
-        // if (
-        //     this.players.every(
-        //         (player) =>
-        //             player.state == PlayerState.SOLVED ||
-        //             player.state == PlayerState.DISCONNECTED ||
-        //             player.state == PlayerState.DNF
-        //     )
-        // ) {
-        //     console.log('rankings', this.rankings);
-        //     this.io.to(socketID).emit('game:complete', this.rankings);
-        // }
-
-        // // if (!this.players.some((player) => !player.isDNF || player.status != RoomState.GAME_ENDED)) {
-        // //     console.log('rankings', this.rankings);
-        // //     this.io.to(socketID).emit('game:complete', this.rankings);
-        // // }
     }
 
     public processRematchRequest(socketID: string) {
@@ -319,20 +300,19 @@ export default class Room {
     // All player have finished their solve, ran out of time or left
     // Write solves to db, cleanup the room, prepare rematch
     private gameEnd() {
-        if (
-            this.players.some(
-                (p) =>
-                    p.state != PlayerState.SOLVED && p.state != PlayerState.DNF && p.state != PlayerState.DISCONNECTED
-            )
-        ) {
+        const ALLOWED_STATES = [PlayerState.SOLVED, PlayerState.DNF, PlayerState.DISCONNECTED];
+        if (this.players.some((p) => !ALLOWED_STATES.includes(p.state))) {
             console.log(`[WARN] Called room.gameEnd but some player is still playing`);
             return;
         }
 
         this.roomStatus = RoomState.ENDED;
 
-        this.rankings = this.players.slice().sort((pa, pb) => {
+        // Create rankings
+        this.rankings = this.players.slice().sort((playerA, playerB) => {
+            // Inner closure, computes points for a single player
             const pts = (p: Player): number => {
+                // make sure to put disconnected players at the end
                 if (p.state == PlayerState.DISCONNECTED) {
                     return Infinity;
                 }
@@ -348,9 +328,11 @@ export default class Room {
                 return p.solveTime;
             };
 
-            return pts(pa) - pts(pb);
+            return pts(playerA) - pts(playerB);
         });
 
+        
+        // Make sure to send the rankings to the players
         this.io.to(this.roomID).emit('game:complete', this.rankings);
 
         console.log(`[INFO] Game ${this.roomID} has ended`);
@@ -358,13 +340,14 @@ export default class Room {
 
         const currentDate = new Date(Date.now()).toISOString();
 
-        const upload = async (username: string, solve_duration: number, move_list: string) => {
+        const upload = async (username: string, solveDuration: number, moveList: string) => {
+
             let { error } = await supabase.from('leaderboard').insert({
                 username: username,
-                solve_duration: solve_duration,
+                solve_duration: solveDuration,
                 solved_at: currentDate,
                 scramble: this.scramble,
-                move_list: move_list,
+                move_list: moveList,
             });
 
             if (error) {
