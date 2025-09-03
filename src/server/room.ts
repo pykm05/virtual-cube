@@ -62,7 +62,10 @@ export default class Room {
     }
 
     public handleInput(socketID: string, notationString: string) {
-        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
+        for (const player of this.players) {
+            if (player.id == socketID) continue;
+            this.io.to(player.id).emit('keyboard:input', socketID, notationString);
+        }
 
         let player = this.players.find((p) => p.id == socketID);
 
