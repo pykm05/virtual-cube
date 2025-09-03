@@ -11,7 +11,8 @@ export default class Room {
     public roomStatus = RoomState.GAME_NOT_STARTED;
 
     // 20 moves scrambles are linked to db structure, mind that if you ever change this
-    public scramble: string = generate3x3Scramble(20);
+    // public scramble: string = generate3x3Scramble(20);
+    public scramble: string = "L'";
 
     private inspectionTime = 15;
     private solveTime: number = 0;
@@ -62,7 +63,10 @@ export default class Room {
     }
 
     public handleInput(socketID: string, notationString: string) {
-        this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
+        for (const player of this.players) {
+            if (player.id == socketID) continue;
+            this.io.to(player.id).emit('keyboard:input', socketID, notationString);
+        }
 
         let player = this.players.find((p) => p.id == socketID);
 
