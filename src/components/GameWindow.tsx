@@ -45,7 +45,7 @@ export default function GameWindow() {
     const [players, setPlayers] = useState<Player[]>([]);
 
     function newScene(container: HTMLElement, assignedSocketID: string) {
-        const { scene, renderer, camera } = Scene(container);
+        const { scene, renderer, camera, webgl_cleanup } = Scene(container);
         const scramble = scrambleBuffer[assignedSocketID];
         const cube = new Cube(scene, renderer, camera, scramble);
         delete scrambleBuffer[assignedSocketID];
@@ -103,6 +103,11 @@ export default function GameWindow() {
                 }
             }
         });
+
+        socket.on('room:found', async (_roomID: string) => {
+            // console.log("Webgl scene cleanup");
+            webgl_cleanup();
+        })
     }
 
     useEffect(() => {
