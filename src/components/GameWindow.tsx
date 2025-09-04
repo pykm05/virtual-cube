@@ -107,7 +107,7 @@ export default function GameWindow() {
         socket.on('room:found', async (_roomID: string) => {
             // console.log("Webgl scene cleanup");
             webgl_cleanup();
-        })
+        });
     }
 
     useEffect(() => {
