@@ -47,8 +47,9 @@ export default function GameWindow() {
     // NOTE: assignedSocketID is the socket id of the player associated to this scene
     // (1 scene per player)
     function newScene(container: HTMLElement, assignedSocketID: string) {
+        const { scene, renderer, camera, webgl_cleanup } = Scene(container);
         console.log('INITIALIZING NEW SCENE');
-        const { scene, renderer, camera } = Scene(container);
+
         const scramble = scrambleBuffer[assignedSocketID];
         const cube = new Cube(scene, renderer, camera, scramble);
         delete scrambleBuffer[assignedSocketID];
@@ -102,6 +103,11 @@ export default function GameWindow() {
                     socket.off('keyboard:input');
                 }
             }
+        });
+
+        socket.on('room:found', async (_roomID: string) => {
+            // console.log("Webgl scene cleanup");
+            webgl_cleanup();
         });
     }
 
