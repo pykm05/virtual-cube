@@ -1,19 +1,31 @@
-import { RoomState } from '@/types/RoomState.ts';
+export enum PlayerState {
+    // (default) Sychronisation state for when the player is waiting for the game to start
+    NOT_YET_STARTED,
 
-export default class Player {
+    // Playing
+    INSPECTION,
+    SOLVING,
+
+    // Done, waiting for the other player or to the room to react
+    SOLVED,
+    DNF,
+
+    // This only includes players that left while they were supposed to be playing
+    DISCONNECTED,
+}
+
+export class Player {
     public id: string;
     public username: string;
-    public status: string;
+    public state: PlayerState;
     public solveTime: number;
-    public isDNF: boolean;
     public moveList: string;
 
     constructor(id: string, username: string) {
         this.id = id;
         this.username = username;
-        this.status = RoomState.GAME_NOT_STARTED;
+        this.state = PlayerState.NOT_YET_STARTED;
         this.solveTime = 0;
-        this.isDNF = false;
         this.moveList = '';
     }
 }
