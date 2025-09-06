@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getSocket, Socket } from '@/lib/socket';
-import Player from '@/types/player';
+import { Player, PlayerState } from '@/types/player';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -11,7 +11,7 @@ type RematchInfo = {
 };
 
 const checkAllPlayersDNF = (players: Player[]) => {
-    return players.every((player) => player.isDNF);
+    return players.every((player) => player.state == PlayerState.DNF);
 };
 
 export default function GameModal() {
@@ -47,11 +47,14 @@ export default function GameModal() {
 
     function displayResults() {
         if (!player) return;
+        if (!socket) return;
 
+        // FIXME: This logic does not use PlayerState.DISCONNECTED
         const allPlayersDNF = checkAllPlayersDNF(playerRanks);
         const tied = allPlayersDNF || playerRanks[0].solveTime == playerRanks[1].solveTime;
-        const opponent = player.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
-        const oppDNF = opponent.isDNF;
+        const opponent = socket.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
+
+        const oppDNF = opponent.state == PlayerState.DNF;
         const won = oppDNF || opponent.id == playerRanks[1].id;
 
         return (
@@ -71,9 +74,12 @@ export default function GameModal() {
                 {!tied && (
                     <div className="flex">
                         <div className="flex flex-1 justify-center">
-                            {!oppDNF && !won && (
-                                <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
-                            )}
+                            {
+                                // What ?
+                                !oppDNF && !won && (
+                                    <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
+                                )
+                            }
                         </div>
                         <div className="flex flex-1 justify-center">
                             {won && <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />}
@@ -89,7 +95,7 @@ export default function GameModal() {
                     <div className="flex flex-1 flex-col items-center">
                         <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
                         <div>{player.username}</div>
-                        <div>{player.isDNF ? 'DNF' : player.solveTime}</div>
+                        <div>{player.state == PlayerState.DNF ? 'DNF' : player.solveTime}</div>
                     </div>
                 </div>
                 <div className="flex justify-center items-center gap-[10px] px-3 py-3">
@@ -122,12 +128,20 @@ export default function GameModal() {
         const socket = getSocket();
         setSocket(socket);
 
-        socket.on('player:completed_solve', (p: Player) => {
-            setplayer(p);
+        socket.on('player:state_update', (id: string, state: PlayerState) => {
+            if (state != PlayerState.SOLVED || socket.id != id) return;
             setCubeSolved(true);
         });
 
         socket.on('game:complete', (rankings: Player[]) => {
+            const p = rankings.find((p) => p.id == socket.id);
+
+            if (!p) {
+                console.log('[ERROR] DID NOT FIND SELF IN RANKINGS');
+                return;
+            }
+
+            setplayer(p);
             setGameComplete(true);
             setPlayerRanks(rankings);
         });

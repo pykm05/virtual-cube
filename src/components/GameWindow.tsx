@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { getSocket, getPlayerOrder } from '@/lib/socket';
 import { Cube } from '@/components/three/cube';
 import Scene from '@/components/three/scene';
-import Player from '@/types/player';
+import { Player } from '@/types/player';
 import { Notation, KeybindMap, notationFromString, isCubeRotation } from '@/types/cubeTypes';
 import Image from 'next/image';
 
@@ -44,7 +44,10 @@ const scrambleBuffer: Record<string, string> = {};
 export default function GameWindow() {
     const [players, setPlayers] = useState<Player[]>([]);
 
+    // NOTE: assignedSocketID is the socket id of the player associated to this scene
+    // (1 scene per player)
     function newScene(container: HTMLElement, assignedSocketID: string) {
+        console.log('INITIALIZING NEW SCENE');
         const { scene, renderer, camera } = Scene(container);
         const scramble = scrambleBuffer[assignedSocketID];
         const cube = new Cube(scene, renderer, camera, scramble);
@@ -74,15 +77,12 @@ export default function GameWindow() {
                     console.log(`Key not in the bindmap: ${e.key}`);
                     return;
                 }
-
-                console.log(`Sending move: ${move}`);
-
                 socket.emit('keyboard:input', socket.id, move);
             });
         }
 
         socket.on('keyboard:input', async (socketID: string, key: string) => {
-            if ((emitter && socket.id == socketID) || (!emitter && assignedSocketID == socketID)) {
+            if (socketID == assignedSocketID) {
                 const maybe_notation: Notation | null = notationFromString(key);
 
                 if (maybe_notation == null) {
@@ -109,6 +109,7 @@ export default function GameWindow() {
         const socket = getSocket();
 
         socket.on('game:start', (users: Player[], scramble: string) => {
+            console.log(`Starting game with ${users.length} players: `, ...users);
             for (let user of users) {
                 scrambleBuffer[user.id] = scramble;
             }
