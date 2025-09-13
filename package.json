@@ -29,6 +29,7 @@
     "devDependencies": {
         "@eslint/eslintrc": "^3",
         "@tailwindcss/postcss": "^4",
+        "@types/cookie-parser": "^1.4.9",
         "@types/express": "^5.0.2",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^20",
