@@ -30,14 +30,41 @@ function getRelativeTime(timestamp: string) {
 
 async function getLeaderboard(): Promise<Leaderboard[] | null> {
     try {
-        const response = await fetch(`http://localhost:4000/api/leaderboard/10`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leaderboard/10`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            body: null,
+            credentials: 'include',
+        });
+
+        let data = await response.json();
 
         if (!response.ok) {
-            console.log(`Unexpected http code: ${response.status}`);
-            return null;
+            const refreshRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/refresh-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: null,
+                credentials: 'include',
+            });
+
+            const refreshData = await refreshRes.json();
+
+            if (!refreshRes.ok) {
+                console.log(refreshData.message);
+                return null;
+            }
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/leaderboard/10`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                body: null,
+                credentials: 'include',
+            });
+
+            data = await response.json();
         }
 
-        const lb: Leaderboard[] = await response.json();
+        const lb: Leaderboard[] = data.data;
         return lb;
     } catch (error) {
         console.error('Error fetching leaderboard: ${error}');
@@ -235,7 +262,9 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                                 })}
                             </tbody>
                         </table>
-                        {entries.length === 0 && <p className="text-center text-gray-400 pt-6">No entries yet.</p>}
+                        {entries.length === 0 && (
+                            <p className="text-center text-gray-400 pt-6">Log in to view entries</p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -3,6 +3,28 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
     public: {
         Tables: {
+            users: {
+                Row: {
+                    id: string;
+                    username: string;
+                    email: string;
+                    pwd: string;
+                    refreshToken: string;
+                };
+                Insert: {
+                    username: string;
+                    email: string;
+                    pwd: string;
+                };
+                Update: {
+                    id?: string;
+                    username?: string;
+                    email?: string;
+                    pwd?: string;
+                    refreshToken?: string;
+                };
+                Relationships: [];
+            };
             leaderboard: {
                 Row: {
                     solved_at: string;
