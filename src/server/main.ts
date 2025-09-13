@@ -12,11 +12,12 @@ import Send from './auth/Send.ts';
 const app = express();
 const port = 4000;
 
-app.use(cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-}
-));
+app.use(
+    cors({
+        origin: 'http://localhost:3000',
+        credentials: true,
+    })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -52,7 +53,6 @@ app.post('/api/register', AuthController.register);
 app.post('/api/login', AuthController.login);
 
 app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
-
 
 const server = http.createServer(app);
 

@@ -246,8 +246,9 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                                         <tr
                                             key={`${entry.username}-${entry.solved_at}-${index}`}
                                             data-user-row
-                                            className={`border-b border-gray-700/30 transition hover:bg-gray-700/20 cursor-pointer ${highlight ? 'bg-blue-900/40 font-bold' : ''
-                                                } ${isSelected ? 'bg-purple-900/30' : ''}`}
+                                            className={`border-b border-gray-700/30 transition hover:bg-gray-700/20 cursor-pointer ${
+                                                highlight ? 'bg-blue-900/40 font-bold' : ''
+                                            } ${isSelected ? 'bg-purple-900/30' : ''}`}
                                             onClick={() => handleUserClick(entry)}
                                         >
                                             <td className="py-2 px-2">{getRankIcon(index)}</td>
@@ -261,7 +262,9 @@ export default function LeaderboardModal({ isOpen, onClose, currentUser }: Leade
                                 })}
                             </tbody>
                         </table>
-                        {entries.length === 0 && <p className="text-center text-gray-400 pt-6">Log in to view entries</p>}
+                        {entries.length === 0 && (
+                            <p className="text-center text-gray-400 pt-6">Log in to view entries</p>
+                        )}
                     </div>
                 </div>
             </div>

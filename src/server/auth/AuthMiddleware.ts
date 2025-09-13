@@ -18,12 +18,11 @@ class AuthMiddleware {
             // Attach user information to the request object
             (req as any).user = decodedToken;
             next();
-        }
-        catch (error) {
+        } catch (error) {
             console.error('Authentication failed:', error);
             return Send.unauthorized(res, null);
         }
-    }
+    };
 
     static refreshTokenValidation = (req: Request, res: Response, next: NextFunction) => {
         const refreshToken = req.cookies.refreshToken;
@@ -39,12 +38,11 @@ class AuthMiddleware {
             // Attach user information to the request object
             (req as any).userId = decodedToken.userId;
             next();
-        }
-        catch (error) {
+        } catch (error) {
             console.error('Authentication failed:', error);
             return Send.unauthorized(res, null, 'Invalid or expired refresh token');
         }
-    }
+    };
 }
 
 export default AuthMiddleware;

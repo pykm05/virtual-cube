@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabase } from '../db.ts'
+import { supabase } from '../db.ts';
 import Send from './Send.ts';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -28,7 +28,10 @@ class AuthController {
         }
 
         if (existingUser && existingUser.length > 0) {
-            const conflictField = email === existingUser[0].email ? 'Email is already associated with an account' : `Username is already in use`;
+            const conflictField =
+                email === existingUser[0].email
+                    ? 'Email is already associated with an account'
+                    : `Username is already in use`;
             return Send.error(res, null, conflictField);
         }
 
@@ -63,25 +66,18 @@ class AuthController {
         );
 
         // Store refresh token in database
-        await supabase
-            .from('users')
-            .update({ refreshToken: refreshToken })
-            .eq('id', newUser.id);
+        await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', newUser.id);
 
         // Set access and refresh tokens in HttpOnly cookies
         // Ensures tokens are unable to be accessed using JavaScript (security against XSS attacks)
-        res.cookie('accessToken', accessToken,
-            {
-                httpOnly: true,
-                maxAge: 60 * 1000,  // 15 minutes in mileseconds
-            }
-        );
-        res.cookie('refreshToken', refreshToken,
-            {
-                httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000,  // 24 hours in mileseconds
-            }
-        );
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            maxAge: 60 * 1000, // 15 minutes in mileseconds
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours in mileseconds
+        });
 
         return Send.success(res, null, 'Registered successfully');
     };
@@ -89,11 +85,7 @@ class AuthController {
     static login = async (req: Request, res: Response) => {
         const { email, password } = req.body;
 
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('id, email, pwd')
-            .eq('email', email)
-            .single();
+        const { data: user, error } = await supabase.from('users').select('id, email, pwd').eq('email', email).single();
 
         if (error || !user) {
             return Send.error(res, null, 'Invalid email or password');
@@ -123,23 +115,16 @@ class AuthController {
         );
 
         // Store refresh token in database
-        await supabase
-            .from('users')
-            .update({ refreshToken: refreshToken })
-            .eq('id', user.id);
+        await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', user.id);
 
-        res.cookie('accessToken', accessToken,
-            {
-                httpOnly: true,
-                maxAge: 60 * 1000,
-            }
-        );
-        res.cookie('refreshToken', refreshToken,
-            {
-                httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000,
-            }
-        );
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            maxAge: 60 * 1000,
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000,
+        });
 
         return Send.success(res, null, 'Logged in successfully');
     };
@@ -171,20 +156,17 @@ class AuthController {
                 process.env.JWT_KEY!,
                 { expiresIn: process.env.JWT_EXPIRE as any }
             );
-            res.cookie('accessToken', newAccessToken,
-                {
-                    httpOnly: true,
-                    maxAge: 60 * 1000,
-                }
-            );
+            res.cookie('accessToken', newAccessToken, {
+                httpOnly: true,
+                maxAge: 60 * 1000,
+            });
 
-            return Send.success(res, null, 'Access token refreshed successfully')
-        }
-        catch (error) {
+            return Send.success(res, null, 'Access token refreshed successfully');
+        } catch (error) {
             console.error('Refresh Token failed:', error);
             return Send.error(res, null, 'Failed to refresh token');
         }
-    }
+    };
 }
 
 export default AuthController;

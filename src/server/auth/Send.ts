@@ -9,7 +9,7 @@ class Send {
         res.status(200).json({
             ok: true,
             message,
-            data
+            data,
         });
         return;
     }
