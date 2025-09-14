@@ -1,4 +1,4 @@
-import type { Deps } from '../modules/deps';
+import type { Deps } from './deps';
 
 declare global {
     var deps: Deps;

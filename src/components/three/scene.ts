@@ -32,7 +32,12 @@ function Scene(container: HTMLElement | null) {
     window.addEventListener('resize', resizeRenderer);
     renderer.render(scene, camera);
 
-    return { scene, renderer, camera };
+    function webgl_cleanup() {
+        renderer.dispose();
+        renderer.forceContextLoss();
+    }
+
+    return { scene, renderer, camera, webgl_cleanup };
 }
 
 export default Scene;

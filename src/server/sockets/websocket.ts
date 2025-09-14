@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import { Socket, Server as SocketServer } from 'socket.io';
-import initializeGameHandlers from './handlers/gameHandler';
+import initializeGameHandlers from './gameHandler';
 
 export default class WebSocket {
     public io!: SocketServer;

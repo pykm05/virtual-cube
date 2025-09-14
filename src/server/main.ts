@@ -1,20 +1,33 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import './modules/deps.ts';
+import './deps.ts';
 import { supabase } from './db.ts';
+
+import UserController from './controllers/UserController.ts';
+
+import AuthController from './controllers/AuthController.ts';
+import AuthMiddleware from './auth/AuthMiddleware.ts';
+import cookieParser from 'cookie-parser';
+import Send from './auth/Send.ts';
 
 const app = express();
 const port = 4000;
 
-app.use(cors());
+app.use(
+    cors({
+        origin: 'http://localhost:3000',
+        credentials: true,
+    })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/', (_, res) => {
     res.send('server running');
 });
 
-app.get('/api/leaderboard/:limit', async (req, res) => {
+app.get('/api/leaderboard/:limit', AuthMiddleware.authenticateUser, async (req, res) => {
     const limit = parseInt(req.params.limit, 10);
     if (isNaN(limit)) {
         console.log(`Invalid limit (${req.params.limit}) NaN`);
@@ -34,8 +47,16 @@ app.get('/api/leaderboard/:limit', async (req, res) => {
     }
     // console.log(data);
 
-    res.status(200).json(data);
+    return Send.success(res, data, 'Registration failed');
 });
+
+app.post('/api/register', AuthController.register);
+
+app.post('/api/login', AuthController.login);
+
+app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
+
+app.get('/api/get-user', AuthMiddleware.authenticateUser, UserController.getUser);
 
 const server = http.createServer(app);
 
