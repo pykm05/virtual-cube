@@ -98,6 +98,12 @@ export default class Room {
     }
 
     public handleInput(socketID: string, notationString: string) {
+      
+        for (const player of this.players) {
+            if (player.id == socketID) continue;
+            this.io.to(player.id).emit('keyboard:input', socketID, notationString);
+        }
+
         let player = this.players.find((p) => p.id == socketID);
 
         // If the player is not here, there is no point sending the event to the ws room
