@@ -13,10 +13,10 @@ class AuthMiddleware {
 
         try {
             // Verify the token using the secret
-            const decodedToken = jwt.verify(accessToken, process.env.JWT_KEY!);
+            const decodedToken = jwt.verify(accessToken, process.env.JWT_KEY!) as { userId: number };
 
             // Attach user information to the request object
-            (req as any).user = decodedToken;
+            (req as any).userId = decodedToken.userId;
             next();
         } catch (error) {
             console.error('Authentication failed:', error);

@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import './modules/deps.ts';
+import './deps.ts';
 import { supabase } from './db.ts';
 
-import AuthController from './auth/AuthController.ts';
+import UserController from './controllers/UserController.ts';
+
+import AuthController from './controllers/AuthController.ts';
 import AuthMiddleware from './auth/AuthMiddleware.ts';
 import cookieParser from 'cookie-parser';
 import Send from './auth/Send.ts';
@@ -53,6 +55,8 @@ app.post('/api/register', AuthController.register);
 app.post('/api/login', AuthController.login);
 
 app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
+
+app.get('/api/get-user', AuthMiddleware.authenticateUser, UserController.getUser);
 
 const server = http.createServer(app);
 

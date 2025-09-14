@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { Player, PlayerState } from '@/types/player';
 import { RoomState } from '@/types/RoomState';
-import { generate3x3Scramble } from './lib/utils';
+import { generate3x3Scramble } from './utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
 import { supabase } from './db';
 

@@ -15,7 +15,7 @@ export default function PlayerWindow() {
         socket.emit('room:joined', window.location.pathname.split('/').pop() || '');
 
         socket.on('join:invalid', () => {
-            router.push('./');
+            router.push('../');
             socket.off('join:invalid');
         });
     }, []);

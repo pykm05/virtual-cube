@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../db.ts';
-import Send from './Send.ts';
+import Send from '../auth/Send.ts';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -72,7 +72,7 @@ class AuthController {
         // Ensures tokens are unable to be accessed using JavaScript (security against XSS attacks)
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
-            maxAge: 60 * 1000, // 15 minutes in mileseconds
+            maxAge: 15 * 60 * 1000, // 15 minutes in mileseconds
         });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
@@ -99,7 +99,7 @@ class AuthController {
 
         const accessToken = jwt.sign(
             {
-                sub: user.id,
+                userId: user.id,
                 email: user.email,
             },
             process.env.JWT_KEY!,
@@ -107,7 +107,7 @@ class AuthController {
         );
         const refreshToken = jwt.sign(
             {
-                sub: user.id,
+                userId: user.id,
                 email: user.email,
             },
             process.env.REFRESH_KEY!,
@@ -158,7 +158,7 @@ class AuthController {
             );
             res.cookie('accessToken', newAccessToken, {
                 httpOnly: true,
-                maxAge: 60 * 1000,
+                maxAge: 15 * 60 * 1000,
             });
 
             return Send.success(res, null, 'Access token refreshed successfully');

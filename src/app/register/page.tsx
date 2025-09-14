@@ -29,7 +29,7 @@ function Register() {
                 return;
             }
 
-            router.push(`../play/`);
+            router.push(`../`);
         } catch (error) {
             setFeedback('An unexpected error occured');
         } finally {

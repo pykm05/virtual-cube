@@ -42,7 +42,7 @@ export default function GameModal() {
     }
 
     function returnToMenu() {
-        router.push(`/play`);
+        router.push(`../`);
     }
 
     function displayResults() {
