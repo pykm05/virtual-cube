@@ -43,8 +43,6 @@ export default function PlayHome() {
                 }
 
                 const json = await res.json();
-                console.log(json);
-
                 setUserInfo({ loggedIn: true, username: json.data.username });
             } catch (error) {
                 console.error('Error fetching user:', error);
@@ -58,7 +56,6 @@ export default function PlayHome() {
 
     const play = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('sdfdsf');
 
         if (!socket) return;
 
