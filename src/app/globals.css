@@ -1,9 +1,8 @@
 @import 'tailwindcss';
 
 :root {
-    --background: #ffffff;
+    --background: #474442;
     --foreground: #171717;
-    --background: #2b3246;
 }
 @theme {
     --color-gray-50: #615955;
@@ -12,6 +11,8 @@
 
     --color-purple-50: #a84da8;
     --color-purple-100: #824282;
+
+    --text-tiny: 0.75em;
 }
 
 @theme inline {

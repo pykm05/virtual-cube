@@ -23,36 +23,23 @@ function textForState(state: PlayerState): string {
 
 export default function Game() {
     const [localState, setLocalState] = useState(PlayerState.NOT_YET_STARTED);
-    // const [oppState, setOppState] = useState(PlayerState.NOT_YET_STARTED);
-
     const [time, setTime] = useState(15);
 
     useEffect(() => {
         const socket = getSocket();
 
-        socket.on('timer:update', (t) => {
-            setTime(t);
+        socket.on('player:state_update', (id: string, state: PlayerState) => {
+            if (id != socket.id) return;
+            setLocalState(state);
         });
 
-        socket.on('player:state_update', (id: string, state: PlayerState) => {
-            if (id != socket.id) {
-                // opp
-                return;
-            }
-            setLocalState(state);
-
-            // if (id == socket.id) {
-            //     console.log(`Local player state changed from ${localState} to ${state}`);
-            //     setLocalState(state);
-            // }else{
-            //     console.log(`Opp player state changed from ${oppState} to ${state}`);
-            //     setOppState(state);
-            // }
+        socket.on('timer:update', (t) => {
+            setTime(t);
         });
     }, []);
 
     return (
-        <div className="flex flex-col items-center w-full p-5 bg-purple-800 text-white">
+        <div className="z-50 absolute m-auto left-0 right-0 p-5 flex flex-col justify-center items-center h-[100px] w-[350px] rounded-b-lg bg-purple-100 font-bold text-2xl">
             <div>{textForState(localState)}</div>
             <div>{localState == PlayerState.INSPECTION || localState == PlayerState.SOLVING ? time : null}</div>
         </div>

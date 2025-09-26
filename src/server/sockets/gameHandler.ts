@@ -1,8 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import Room from '@/server/room.ts';
 import { Player, PlayerState } from '@/types/player.ts';
-import { RoomState } from '@/types/RoomState.ts';
+import { RoomState } from '@/types/roomState';
 import { genRanHex } from '@/server/utils';
+
 export default function initializeGameHandlers(io: Server, socket: Socket) {
     /*
     Setup event listeners for the socket

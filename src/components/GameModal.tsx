@@ -58,60 +58,59 @@ export default function GameModal() {
         const won = oppDNF || opponent.id == playerRanks[1].id;
 
         return (
-            <div className="flex flex-col w-full h-full">
-                <div className="relative flex text-lg mb-[20px] justify-center items-center px-3 py-5 border-b-2">
+            <div className="flex flex-col w-[350px] h-[400px] bg-gray-200 rounded-lg text-white">
+                <div className="relative flex text-lg justify-center items-center px-3 py-5">
                     <button
                         onClick={returnToMenu}
-                        className="absolute border-2 top-2 left-2 flex items-center px-1 rounded-full"
+                        className="absolute top-2 left-2 flex items-center px-1 rounded-full bg-gray-100 hover:bg-gray-50"
                     >
                         X
                     </button>
 
-                    {/* Centered status text */}
-                    <div>{tied ? 'Tie' : won ? 'You won!' : 'You lost'}</div>
+                    <div className="font-bold text-2xl ">{tied ? 'Tie' : won ? 'You won!' : 'You lost'}</div>
                 </div>
 
                 {!tied && (
                     <div className="flex">
                         <div className="flex flex-1 justify-center">
-                            {
-                                // What ?
-                                !oppDNF && !won && (
-                                    <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
-                                )
-                            }
+                            {!oppDNF && !won && (
+                                <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />
+                            )}
                         </div>
                         <div className="flex flex-1 justify-center">
                             {won && <Image src="/crown.svg" height={40} width={40} priority={true} alt="user icon" />}
                         </div>
                     </div>
                 )}
-                <div className="flex mb-[40px] w-full h-full items-center">
+                <div className="flex h-[300px] items-center">
                     <div className="flex flex-1 flex-col items-center">
-                        <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
-                        <div>{opponent.username}</div>
+                        <Image src="/user.svg" height={50} width={50} priority={true} alt="user icon" />
+                        <div className="mt-[10px]">{opponent.username}</div>
                         <div>{oppDNF ? 'DNF' : opponent.solveTime}</div>
                     </div>
                     <div className="flex flex-1 flex-col items-center">
-                        <Image src="/account_circle.svg" height={75} width={75} priority={true} alt="user icon" />
-                        <div>{player.username}</div>
+                        <Image src="/user.svg" height={50} width={50} priority={true} alt="user icon" />
+                        <div className="mt-[10px]">{player.username}</div>
                         <div>{player.state == PlayerState.DNF ? 'DNF' : player.solveTime}</div>
                     </div>
                 </div>
-                <div className="flex justify-center items-center gap-[10px] px-3 py-3">
-                    <button onClick={joinNewGame} className="hover:bg-gray-200 px-9 py-4 border-2 rounded-[10px]">
+                <div className="flex justify-center items-center gap-[20px] px-3 py-3">
+                    <button
+                        onClick={joinNewGame}
+                        className="w-[175px] py-3 px-5 rounded-lg bg-gray-100 hover:bg-gray-50"
+                    >
                         New Game
                     </button>
                     <button
                         onClick={handleRematch}
-                        className="hover:bg-gray-200 px-3 py-4 border-2 min-w-[150px] rounded-[10px]"
+                        className="w-[175px] py-3 px-5 rounded-lg bg-gray-100 hover:bg-gray-50"
                     >
                         {rematchMessage != '' ? (
                             rematchMessage == 'Awaiting player response...' ? (
                                 <>cancel</>
                             ) : (
                                 <div>
-                                    Accept rematch ({rematchInfo.queueSize}/{rematchInfo.playerCount})
+                                    Rematch ({rematchInfo.queueSize}/{rematchInfo.playerCount})
                                 </div>
                             )
                         ) : (
@@ -135,6 +134,8 @@ export default function GameModal() {
 
         socket.on('game:complete', (rankings: Player[]) => {
             const p = rankings.find((p) => p.id == socket.id);
+
+            console.log('game end');
 
             if (!p) {
                 console.log('[ERROR] DID NOT FIND SELF IN RANKINGS');
@@ -161,11 +162,9 @@ export default function GameModal() {
         });
     }, []);
 
-    return cubeSolved ? (
-        <div className="fixed inset-0 z-50 bg-black/50 w-full h-full p-3 flex justify-center items-center">
-            <div className="flex justify-center items-center rounded-[20px] w-[400px] bg-white">
-                {gameComplete ? displayResults() : <div>Awaiting players to finish...</div>}
-            </div>
+    return gameComplete || cubeSolved ? (
+        <div className="z-100 fixed inset-0 bg-black/50 w-full h-full p-3 flex justify-center items-center">
+            <div className="flex justify-center items-center">{displayResults()}</div>
         </div>
     ) : null;
 }

@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { Player, PlayerState } from '@/types/player';
-import { RoomState } from '@/types/RoomState';
+import { RoomState } from '@/types/roomState';
 import { generate3x3Scramble } from './utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
 import { supabase } from './db';
@@ -20,6 +20,7 @@ export default class Room {
 
     private inspectionTime = 15;
     private solveTimeLimit: number = 300; // 300
+    private solveStarted = false;
 
     private rematchQueue: string[] = [];
     private io: Server;
@@ -92,8 +93,6 @@ export default class Room {
         // TODO: re-add this while making sure it doesn't cause sync issues with chaining games on client side
         // this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
 
-        // Still unsure of that `DISCONNECTED` state, so to be sure we don't fuck up the logic
-        // let's put their time as the max so they don't accidentally win :)
         player.solveTime = this.solveTimeLimit;
     }
 
@@ -105,8 +104,6 @@ export default class Room {
             console.log(`[ERROR] Tried to call room.handleInput with an invalid socket id: '${socketID}'`);
             return;
         }
-
-        console.log(`Player move: ${notationString}`);
 
         this.io.to(this.roomID).emit('keyboard:input', socketID, notationString);
 
@@ -126,6 +123,7 @@ export default class Room {
         // If that player is the first one start solving, start the solve timer
         if (this.players.every((p) => p.state == PlayerState.INSPECTION)) {
             this.startSolve();
+            this.solveStarted = true;
         }
 
         player.state = PlayerState.SOLVING;
@@ -215,6 +213,11 @@ export default class Room {
 
                     player.state = PlayerState.SOLVING;
                     this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+                }
+
+                if (!this.solveStarted) {
+                    this.startSolve();
+                    this.solveStarted = true;
                 }
             }
 
@@ -320,7 +323,8 @@ export default class Room {
                     console.log(
                         `[BUG] room.gameEnd found a bug\nA player with the DNF state does not have its solve time equal to this.solveTimeLimit(${this.solveTimeLimit}): ${p.solveTime}`
                     );
-                    p.solveTime == this.solveTimeLimit;
+                    p.solveTime = this.solveTimeLimit;
+                    this.io.to(this.roomID).emit('player:state_update', p.id, p.state);
                 }
 
                 return p.solveTime;
