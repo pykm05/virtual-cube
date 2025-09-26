@@ -10,7 +10,7 @@ import { Notation, KeybindMap, notationFromString, isCubeRotation } from '@/type
 // prettier-ignore
 // Stop removing the quotes on the keys
 const default_keybinds: KeybindMap = {
-    'f': Notation.U_PRIME,
+    'f': Notation.U_PRIME, // turns
     'j': Notation.U,
     's': Notation.D,
     'l': Notation.D_PRIME,
@@ -29,8 +29,7 @@ const default_keybinds: KeybindMap = {
     '1': Notation.S_PRIME,
     '2': Notation.E,
     '9': Notation.E_PRIME,
-
-    ';': Notation.y,
+    ';': Notation.y, // rotations
     'a': Notation.y_PRIME,
     'y': Notation.x,
     'b': Notation.x_PRIME,
