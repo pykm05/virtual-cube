@@ -1,17 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSocket, getPlayerOrder } from '@/lib/socket';
+import { getSocket, getPlayerOrder, Socket } from '@/lib/socket';
 import { Cube } from '@/components/three/cube';
 import Scene from '@/components/three/scene';
 import { Player } from '@/types/player';
 import { Notation, KeybindMap, notationFromString, isCubeRotation } from '@/types/cubeTypes';
-import Image from 'next/image';
 
 // FIXME: Put that somewhere else
 // prettier-ignore
 // Stop removing the quotes on the keys
 const default_keybinds: KeybindMap = {
-    'f': Notation.U_PRIME,
+    'f': Notation.U_PRIME, // turns
     'j': Notation.U,
     's': Notation.D,
     'l': Notation.D_PRIME,
@@ -30,8 +29,7 @@ const default_keybinds: KeybindMap = {
     '1': Notation.S_PRIME,
     '2': Notation.E,
     '9': Notation.E_PRIME,
-
-    ';': Notation.y,
+    ';': Notation.y, // rotations
     'a': Notation.y_PRIME,
     'y': Notation.x,
     'b': Notation.x_PRIME,
@@ -43,6 +41,7 @@ const scrambleBuffer: Record<string, string> = {};
 
 export default function GameWindow() {
     const [players, setPlayers] = useState<Player[]>([]);
+    const socket = getSocket();
 
     // NOTE: assignedSocketID is the socket id of the player associated to this scene
     // (1 scene per player)
@@ -54,7 +53,11 @@ export default function GameWindow() {
         const cube = new Cube(scene, renderer, camera, scramble);
         delete scrambleBuffer[assignedSocketID];
 
-        const socket = getSocket();
+        if (!socket) {
+            console.log('socket not found');
+            return;
+        }
+
         const emitter = socket.id == assignedSocketID;
 
         // Make sure we capture keydowns only if the scene is the active player's scene
@@ -63,10 +66,6 @@ export default function GameWindow() {
         // I would have loved to put that call elsewhere, but we need the socket and the cube
         if (emitter) {
             window.addEventListener('keydown', async (e) => {
-                if (e.repeat) {
-                    return;
-                }
-
                 // This fixes an issue that would allow a player to continue moving its cube on the other player's screen after solving it
                 if (await cube.isSolved()) {
                     return;
@@ -148,23 +147,15 @@ export default function GameWindow() {
     }, [players]);
 
     return (
-        <div className="flex justify-center w-screen h-screen">
+        <div className="flex justify-center w-full h-full gap-5">
             {players.map(
                 (user: Player) =>
                     user && (
-                        <div key={user.id} className="flex flex-1 flex-col">
-                            <div className="flex items-center px-3 w-full gap-[20px]">
-                                <Image
-                                    src="/account_circle.svg"
-                                    height={75}
-                                    width={75}
-                                    priority={true}
-                                    alt="user icon"
-                                />
-                                <div>{user.username ? user.username : 'an unnamed cuber'}</div>
-                            </div>
-                            <div id={user.id} className="w-full h-full" />
-                        </div>
+                        <div
+                            id={user.id}
+                            key={user.id}
+                            className={`w-full h-full ${user.id !== socket.id ? 'opacity-50' : ''}`}
+                        />
                     )
             )}
         </div>

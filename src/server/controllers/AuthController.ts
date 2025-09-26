@@ -16,117 +16,147 @@ Credit: gigi shalamberidze
 
 class AuthController {
     static register = async (req: Request, res: Response) => {
-        const { username, email, password } = req.body;
+        try {
+            const { username, email, password } = req.body;
 
-        let { data: existingUser, error: searchError } = await supabase
-            .from('users')
-            .select('id, username, email')
-            .or(`email.eq.${email},username.eq.${username}`);
+            let { data: existingUser, error: searchError } = await supabase
+                .from('users')
+                .select('id, username, email')
+                .or(`email.eq.${email},username.eq.${username}`);
 
-        if (searchError) {
-            return Send.error(res, null, 'Internal request error');
+            if (searchError) {
+                return Send.error(res, null, 'Internal request error');
+            }
+
+            if (existingUser && existingUser.length > 0) {
+                const conflictField =
+                    email === existingUser[0].email
+                        ? 'Email is already associated with an account'
+                        : `Username is already in use`;
+                return Send.error(res, null, conflictField);
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert({ username: username, email: email, pwd: hashedPassword })
+                .select('id, username')
+                .single();
+
+            if (insertError) {
+                return Send.error(res, null, 'Registration failed');
+            }
+
+            const accessToken = jwt.sign(
+                {
+                    userId: newUser.id,
+                    email: email,
+                },
+                process.env.JWT_KEY!,
+                { expiresIn: process.env.JWT_EXPIRE as any }
+            );
+            const refreshToken = jwt.sign(
+                {
+                    userId: newUser.id,
+                    email: email,
+                },
+                process.env.REFRESH_KEY!,
+                { expiresIn: process.env.REFRESH_EXPIRE as any }
+            );
+
+            // Store refresh token in database
+            await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', newUser.id);
+
+            // Set access and refresh tokens in HttpOnly cookies
+            // Ensures tokens are unable to be accessed using JavaScript (security against XSS attacks)
+            res.cookie('accessToken', accessToken, {
+                httpOnly: true,
+                maxAge: 15 * 60 * 1000, // 15 minutes in mileseconds
+            });
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours in mileseconds
+            });
+
+            return Send.success(res, null, 'Registered successfully');
+        } catch (error) {
+            console.error('Register failed: ', error);
+            return Send.error(res, null, 'register failed');
         }
+    };
 
-        if (existingUser && existingUser.length > 0) {
-            const conflictField =
-                email === existingUser[0].email
-                    ? 'Email is already associated with an account'
-                    : `Username is already in use`;
-            return Send.error(res, null, conflictField);
+    static logout = async (req: Request, res: Response) => {
+        try {
+            const userId = (req as any).userId;
+
+            await supabase.from('users').update({ refreshToken: null }).eq('id', userId).single();
+
+            res.clearCookie('accessToken');
+            res.clearCookie('refreshToken');
+
+            return Send.success(res, null, 'Logged out successfully');
+        } catch (error) {
+            console.error('Logout failed: ', error);
+            return Send.error(res, null, 'Logout failed');
         }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const { data: newUser, error: insertError } = await supabase
-            .from('users')
-            .insert({ username: username, email: email, pwd: hashedPassword })
-            .select('id, username')
-            .single();
-
-        if (insertError) {
-            return Send.error(res, null, 'Registration failed');
-        }
-
-        const accessToken = jwt.sign(
-            {
-                userId: newUser.id,
-                email: email,
-            },
-            process.env.JWT_KEY!,
-            { expiresIn: process.env.JWT_EXPIRE as any }
-        );
-        const refreshToken = jwt.sign(
-            {
-                userId: newUser.id,
-                email: email,
-            },
-            process.env.REFRESH_KEY!,
-            { expiresIn: process.env.REFRESH_EXPIRE as any }
-        );
-
-        // Store refresh token in database
-        await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', newUser.id);
-
-        // Set access and refresh tokens in HttpOnly cookies
-        // Ensures tokens are unable to be accessed using JavaScript (security against XSS attacks)
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            maxAge: 15 * 60 * 1000, // 15 minutes in mileseconds
-        });
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours in mileseconds
-        });
-
-        return Send.success(res, null, 'Registered successfully');
     };
 
     static login = async (req: Request, res: Response) => {
-        const { email, password } = req.body;
+        try {
+            const { email, password } = req.body;
 
-        const { data: user, error } = await supabase.from('users').select('id, email, pwd').eq('email', email).single();
+            const { data: user, error } = await supabase
+                .from('users')
+                .select('id, email, pwd')
+                .eq('email', email)
+                .single();
 
-        if (error || !user) {
-            return Send.error(res, null, 'Invalid email or password');
+            if (error || !user) {
+                return Send.error(res, null, 'Invalid email or password');
+            }
+
+            const isValid = await bcrypt.compare(password, user.pwd);
+
+            if (!isValid) {
+                return Send.error(res, null, 'Invalid email or password');
+            }
+
+            const accessToken = jwt.sign(
+                {
+                    userId: user.id,
+                    email: user.email,
+                },
+                process.env.JWT_KEY!,
+                { expiresIn: process.env.JWT_EXPIRE as any }
+            );
+            const refreshToken = jwt.sign(
+                {
+                    userId: user.id,
+                    email: user.email,
+                },
+                process.env.REFRESH_KEY!,
+                { expiresIn: process.env.REFRESH_EXPIRE as any }
+            );
+
+            // Store refresh token in database
+            await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', user.id);
+
+            res.cookie('accessToken', accessToken, {
+                httpOnly: true,
+                maxAge: 60 * 1000,
+            });
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+
+            return Send.success(res, null, 'Logged in successfully');
+        } catch (error) {
+            console.error('Login failed: ', error);
+            return Send.error(res, null, 'Login failed');
         }
-
-        const isValid = await bcrypt.compare(password, user.pwd);
-
-        if (!isValid) {
-            return Send.error(res, null, 'Invalid email or password');
-        }
-
-        const accessToken = jwt.sign(
-            {
-                userId: user.id,
-                email: user.email,
-            },
-            process.env.JWT_KEY!,
-            { expiresIn: process.env.JWT_EXPIRE as any }
-        );
-        const refreshToken = jwt.sign(
-            {
-                userId: user.id,
-                email: user.email,
-            },
-            process.env.REFRESH_KEY!,
-            { expiresIn: process.env.REFRESH_EXPIRE as any }
-        );
-
-        // Store refresh token in database
-        await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', user.id);
-
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            maxAge: 60 * 1000,
-        });
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000,
-        });
-
-        return Send.success(res, null, 'Logged in successfully');
     };
 
     static refreshToken = async (req: Request, res: Response) => {

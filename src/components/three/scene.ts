@@ -7,8 +7,8 @@ function Scene(container: HTMLElement | null) {
     scene.background = new THREE.Color(0x000000);
 
     const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
-    camera.position.y = 3;
-    camera.position.z = 5;
+    camera.position.y = 4;
+    camera.position.z = 6;
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     const renderer = new THREE.WebGLRenderer();

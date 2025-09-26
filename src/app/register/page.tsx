@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 
 function Register() {
     const [username, setUsername] = useState('');
@@ -15,6 +16,10 @@ function Register() {
         setIsSubmitting(true);
 
         try {
+            if (!username || !email || !password) {
+                throw new Error('All fields are required');
+            }
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -25,58 +30,58 @@ function Register() {
             const data = await res.json();
 
             if (!res.ok) {
-                setFeedback(data.message);
-                return;
+                throw new Error(data.message);
             }
 
             router.push(`../`);
         } catch (error) {
-            setFeedback('An unexpected error occured');
-        } finally {
+            setFeedback((error as Error).message || 'An unexpected error occured');
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="h-full min-w-[750px] min-h-[500px]">
-            <div>
-                <title>Sign Up</title>
-            </div>
+        <div className="flex items-center justify-center h-full text-white bg-gray-100">
+            <div className="flex flex-col w-[400px] h-[500px] relative justify-center items-center rounded shadow-md gap-[5px] bg-gray-200">
+                <button
+                    onClick={() => router.push('/login')}
+                    className="absolute right-85 top-5 py-2 pl-2 pr-1 rounded-[5px] bg-gray-200 hover:bg-gray-100"
+                >
+                    <Image src="/arrow.svg" height={30} width={30} priority={true} alt="user icon" />
+                </button>
 
-            <div className="flex items-center justify-center h-screen">
-                <div className="flex flex-col bg-white w-[400px] h-[500px] rounded shadow-md justify-center items-center gap-3">
-                    <div className="text-black font-bold font-inter text-3xl">Sign Up</div>
-                    <div className="text-black font-inter text-xs">Make an account to continue</div>
-                    <br />
-                    <input
-                        type="text"
-                        className="border-b border-black border-opacity-50 w-2/3 outline-none focus:outline-none"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                    <br />
-                    <input
-                        type="text"
-                        className="border-b border-black border-opacity-50 w-2/3 outline-none focus:outline-none"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <br />
-                    <input
-                        type="password"
-                        className="border-b border-black border-opacity-50 w-2/3 outline-none focus:outline-none"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <br />
-                    <button onClick={register} className="pt-2 pb-2 pl-4 pr-4 bg-blue-100 rounded-l">
-                        Sign Up
-                    </button>
-                    {feedback && <div className="text-red-500 ">{feedback}</div>}
-                </div>
+                <div className="font-bold text-3xl">Sign up</div>
+                <div className="text-xs">Make an account to continue</div>
+
+                <input
+                    type="text"
+                    className="border-1 border-gray-100 rounded-[5px] px-2 py-1 my-[30px] w-2/3 outline-none bg-gray-100"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
+                <input
+                    type="text"
+                    className="border-1 border-gray-100 rounded-[5px] px-2 py-1 mb-[30px] w-2/3 outline-none bg-gray-100"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <input
+                    type="password"
+                    className="border-1 border-gray-100 rounded-[5px] px-2 py-1 mb-[50px] w-2/3 outline-none bg-gray-100"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                    onClick={() => register()}
+                    className="py-2 w-[200px] rounded-[5px] mb-2 bg-purple-100 hover:bg-purple-50"
+                >
+                    Sign Up
+                </button>
+
+                {feedback && <div className="absolute bottom-10 text-red-500">{feedback}</div>}
             </div>
         </div>
     );

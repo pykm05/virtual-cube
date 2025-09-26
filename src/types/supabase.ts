@@ -21,7 +21,7 @@ export type Database = {
                     username?: string;
                     email?: string;
                     pwd?: string;
-                    refreshToken?: string;
+                    refreshToken?: string | null;
                 };
                 Relationships: [];
             };

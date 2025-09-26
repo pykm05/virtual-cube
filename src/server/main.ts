@@ -54,6 +54,8 @@ app.post('/api/register', AuthController.register);
 
 app.post('/api/login', AuthController.login);
 
+app.post('/api/logout', AuthMiddleware.authenticateUser, AuthController.logout);
+
 app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
 
 app.get('/api/get-user', AuthMiddleware.authenticateUser, UserController.getUser);
