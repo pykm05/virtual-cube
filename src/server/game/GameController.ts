@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import Room from '@/server/game/room';
+import Room from '@/server/game/Room';
 import { Player, PlayerState } from '@/types/player.ts';
 import { RoomState } from '@/types/roomState';
 import { genRanHex } from '@/server/utils';
