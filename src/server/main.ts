@@ -2,11 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import './deps.ts';
-import { supabase } from './db.ts';
+import { supabase } from './db/db.ts';
 
-import UserController from './controllers/UserController.ts';
+import UserController from './db/UserController.ts';
 
-import AuthController from './controllers/AuthController.ts';
+import AuthController from './auth/AuthController.ts';
 import AuthMiddleware from './auth/AuthMiddleware.ts';
 import cookieParser from 'cookie-parser';
 import Send from './auth/Send.ts';
@@ -51,14 +51,13 @@ app.get('/api/leaderboard/:limit', AuthMiddleware.authenticateUser, async (req, 
 });
 
 app.post('/api/register', AuthController.register);
-
 app.post('/api/login', AuthController.login);
-
 app.post('/api/logout', AuthMiddleware.authenticateUser, AuthController.logout);
-
 app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
 
 app.get('/api/get-user', AuthMiddleware.authenticateUser, UserController.getUser);
+// app.post('/api/get-user-metrics', AuthMiddleware.authenticateUser, UserController.getUserMetrics);
+app.get('/api/get-user-solves', AuthMiddleware.authenticateUser, UserController.getUserSolves);
 
 const server = http.createServer(app);
 

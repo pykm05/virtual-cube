@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import Send from './Send';
 
+/*
+Credit: gigi shalamberidze
+*/
+
 class AuthMiddleware {
     static authenticateUser = (req: Request, res: Response, next: NextFunction) => {
         // Extract token from HttpOnly cookie

@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import { Socket, Server as SocketServer } from 'socket.io';
-import initializeGameHandlers from './gameHandler';
+import GameController from '../game/GameController';
 
 export default class WebSocket {
     public io!: SocketServer;
@@ -13,7 +13,7 @@ export default class WebSocket {
         });
 
         this.io.on('connection', (socket: Socket) => {
-            initializeGameHandlers(this.io, socket);
+            GameController(this.io, socket);
         });
     }
 }

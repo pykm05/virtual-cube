@@ -1,9 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import { Player, PlayerState } from '@/types/player';
 import { RoomState } from '@/types/roomState';
-import { generate3x3Scramble } from './utils';
+import { generate3x3Scramble } from '../utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
-import { supabase } from './db';
+import { supabase } from '../db/db';
 
 export default class Room {
     public roomID: string;
@@ -15,6 +15,7 @@ export default class Room {
 
     // NOTE: 20 moves scrambles are linked to db structure, mind that if you ever change this
     public scramble: string = generate3x3Scramble(20);
+    // public scramble: string = 'U';
 
     private maxPlayerCount = 2;
 
@@ -35,7 +36,7 @@ export default class Room {
     public debug() {
         console.log(`[INFO] Room ${this.roomID} with ${this.players.length} players:`);
         for (const player of this.players) {
-            console.log(`\t${player.id}\n\t${player.username} - ${player.state}`);
+            console.log(`\t${player.socketId}\n\t${player.username} - ${player.state}`);
         }
     }
 
@@ -61,7 +62,7 @@ export default class Room {
     }
 
     public addPlayer(socket: Socket, player: Player) {
-        if (this.players.length >= this.maxPlayerCount || this.players.some((p) => p.id == socket.id)) {
+        if (this.players.length >= this.maxPlayerCount || this.players.some((p) => p.socketId == socket.id)) {
             socket.to(socket.id).emit('join:invalid');
             return;
         }
@@ -71,8 +72,14 @@ export default class Room {
         this.tryStartGame();
     }
 
+    public getPlayer(socketID: string) {
+        const player = this.players.find((p) => p.socketId == socketID);
+
+        return player;
+    }
+
     public playerLeft(socketID: string) {
-        const player = this.players.find((p) => p.id == socketID);
+        const player = this.players.find((p) => p.socketId == socketID);
 
         if (!player) {
             console.log(`[WARN] Called room.playerLeft with an invalid socket id: ${socketID}`);
@@ -82,7 +89,7 @@ export default class Room {
         // If the game has not started, easy, remove the player
         // NOTE: Check room.players' note in room definition
         if (this.roomStatus != RoomState.PLAYING) {
-            this.players = this.players.filter((p) => p.id != player.id);
+            this.players = this.players.filter((p) => p.socketId != player.socketId);
             return;
         }
 
@@ -99,11 +106,11 @@ export default class Room {
     public handleInput(socketID: string, notationString: string) {
       
         for (const player of this.players) {
-            if (player.id == socketID) continue;
-            this.io.to(player.id).emit('keyboard:input', socketID, notationString);
+            if (player.socketId == socketID) continue;
+            this.io.to(player.socketId).emit('keyboard:input', socketID, notationString);
         }
 
-        let player = this.players.find((p) => p.id == socketID);
+        let player = this.players.find((p) => p.socketId == socketID);
 
         // If the player is not here, there is no point sending the event to the ws room
         if (!player) {
@@ -133,11 +140,11 @@ export default class Room {
         }
 
         player.state = PlayerState.SOLVING;
-        this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+        this.io.to(this.roomID).emit('player:state_update', player.socketId, player.state);
     }
 
-    public playerSolveComplete(socketID: string) {
-        const player = this.players.find((p) => p.id == socketID);
+    public async playerSolveComplete(socketID: string) {
+        const player = this.players.find((p) => p.socketId == socketID);
 
         if (!player) {
             console.log(`[WARN] Called room.playerSolveComplete with an invalid socket id: ${socketID}`);
@@ -146,7 +153,7 @@ export default class Room {
 
         player.solveTime = Number(player.solveTime.toFixed(2));
         player.state = PlayerState.SOLVED;
-        this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+        this.io.to(this.roomID).emit('player:state_update', player.socketId, player.state);
     }
 
     public processRematchRequest(socketID: string) {
@@ -193,10 +200,10 @@ export default class Room {
 
         // Notify all players that the game has started
         for (const player of this.players) {
-            this.io.to(player.id).emit('game:start', this.players, this.scramble);
+            this.io.to(player.socketId).emit('game:start', this.players, this.scramble);
 
             player.state = PlayerState.INSPECTION;
-            this.io.to(player.id).emit('player:state_update', player.id, player.state);
+            this.io.to(player.socketId).emit('player:state_update', player.socketId, player.state);
         }
 
         // Since we switched to PLAYING, let's kickstart the inspection
@@ -208,7 +215,7 @@ export default class Room {
             for (const player of this.players) {
                 if (player.state != PlayerState.INSPECTION) continue;
 
-                this.io.to(player.id).emit('timer:update', this.inspectionTime);
+                this.io.to(player.socketId).emit('timer:update', this.inspectionTime);
             }
 
             // Inspection time's up
@@ -218,7 +225,7 @@ export default class Room {
                     if (player.state != PlayerState.INSPECTION) continue;
 
                     player.state = PlayerState.SOLVING;
-                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+                    this.io.to(this.roomID).emit('player:state_update', player.socketId, player.state);
                 }
 
                 if (!this.solveStarted) {
@@ -253,12 +260,12 @@ export default class Room {
 
                 player.solveTime += 1 / update_tps;
 
-                this.io.to(player.id).emit('timer:update', player.solveTime.toFixed(2));
+                this.io.to(player.socketId).emit('timer:update', player.solveTime.toFixed(2));
 
                 // Player ran out of time
                 if (player.solveTime >= this.solveTimeLimit) {
                     player.state = PlayerState.DNF;
-                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+                    this.io.to(this.roomID).emit('player:state_update', player.socketId, player.state);
                 }
             }
 
@@ -294,7 +301,7 @@ export default class Room {
                     // Round the time to 10^-2
                     player.solveTime = Number(player.solveTime.toFixed(2));
 
-                    this.io.to(this.roomID).emit('player:state_update', player.id, player.state);
+                    this.io.to(this.roomID).emit('player:state_update', player.socketId, player.state);
                 }
 
                 // Wrap up, save score, rematch ?
@@ -330,7 +337,7 @@ export default class Room {
                         `[BUG] room.gameEnd found a bug\nA player with the DNF state does not have its solve time equal to this.solveTimeLimit(${this.solveTimeLimit}): ${p.solveTime}`
                     );
                     p.solveTime = this.solveTimeLimit;
-                    this.io.to(this.roomID).emit('player:state_update', p.id, p.state);
+                    this.io.to(this.roomID).emit('player:state_update', p.socketId, p.state);
                 }
 
                 return p.solveTime;

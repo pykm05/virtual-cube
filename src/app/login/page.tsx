@@ -2,39 +2,25 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
-    const login = async () => {
+    const { login, error } = useAuth();
+
+    const handleLogin = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
-            if (!email || !password) {
-                throw new Error('Email and password are required');
-            }
+            await login({ email, password });
+            router.push('/');
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include',
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.message);
-            }
-
-            router.push('../');
         } catch (error) {
-            setFeedback((error as Error).message || 'An unexpected error occurred');
             setIsSubmitting(false);
         }
     };
@@ -67,7 +53,10 @@ function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
-                <button onClick={login} className="py-2 w-[200px] rounded-[5px] mb-2 bg-purple-100 hover:bg-purple-50">
+                <button
+                    onClick={handleLogin}
+                    className="py-2 w-[200px] rounded-[5px] mb-2 bg-purple-100 hover:bg-purple-50"
+                >
                     Sign In
                 </button>
                 <button
@@ -77,7 +66,7 @@ function Login() {
                     Create an account
                 </button>
 
-                {feedback && <div className="absolute bottom-10 text-red-500">{feedback}</div>}
+                {error && <div className="absolute bottom-10 text-red-500">{error}</div>}
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
     title: 'Virtual Cube',
@@ -16,7 +17,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className="w-screen h-screen">{children}</body>
+            <body className="w-screen h-screen">
+                <AuthProvider>{children}</AuthProvider>
+            </body>
         </html>
     );
 }

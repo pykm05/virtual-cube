@@ -1,5 +1,5 @@
 import { Player } from '@/types/player';
-import Room from '@/server/room';
+import Room from '@/server/game/Room';
 import WebSocket from '@/server/sockets/websocket';
 
 export interface Deps {
