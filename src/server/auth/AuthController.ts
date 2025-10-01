@@ -1,16 +1,10 @@
 import { Request, Response } from 'express';
-import { supabase } from '../db.ts';
-import Send from '../auth/Send.ts';
+import { supabase } from '../db/db.ts';
+import Send from './Send.ts';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 /*
-Handles the core auth operations:
-- register
-- login
-- logout 
-- refresh access token
-
 Credit: gigi shalamberidze
 */
 
@@ -21,7 +15,7 @@ class AuthController {
 
             let { data: existingUser, error: searchError } = await supabase
                 .from('users')
-                .select('id, username, email')
+                .select('user_id, username, email')
                 .or(`email.eq.${email},username.eq.${username}`);
 
             if (searchError) {
@@ -41,8 +35,13 @@ class AuthController {
 
             const { data: newUser, error: insertError } = await supabase
                 .from('users')
-                .insert({ username: username, email: email, pwd: hashedPassword })
-                .select('id, username')
+                .insert({
+                    username: username,
+                    email: email,
+                    pwd: hashedPassword,
+                    created_at: new Date(Date.now()).toISOString(),
+                })
+                .select('user_id, username')
                 .single();
 
             if (insertError) {
@@ -51,7 +50,7 @@ class AuthController {
 
             const accessToken = jwt.sign(
                 {
-                    userId: newUser.id,
+                    userId: newUser.user_id,
                     email: email,
                 },
                 process.env.JWT_KEY!,
@@ -59,7 +58,7 @@ class AuthController {
             );
             const refreshToken = jwt.sign(
                 {
-                    userId: newUser.id,
+                    userId: newUser.user_id,
                     email: email,
                 },
                 process.env.REFRESH_KEY!,
@@ -67,7 +66,7 @@ class AuthController {
             );
 
             // Store refresh token in database
-            await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', newUser.id);
+            await supabase.from('users').update({ refresh_token: refreshToken }).eq('user_id', newUser.user_id);
 
             // Set access and refresh tokens in HttpOnly cookies
             // Ensures tokens are unable to be accessed using JavaScript (security against XSS attacks)
@@ -91,7 +90,7 @@ class AuthController {
         try {
             const userId = (req as any).userId;
 
-            await supabase.from('users').update({ refreshToken: null }).eq('id', userId).single();
+            await supabase.from('users').update({ refresh_token: null }).eq('user_id', userId).single();
 
             res.clearCookie('accessToken');
             res.clearCookie('refreshToken');
@@ -109,7 +108,7 @@ class AuthController {
 
             const { data: user, error } = await supabase
                 .from('users')
-                .select('id, email, pwd')
+                .select('user_id, email, pwd')
                 .eq('email', email)
                 .single();
 
@@ -125,7 +124,7 @@ class AuthController {
 
             const accessToken = jwt.sign(
                 {
-                    userId: user.id,
+                    userId: user.user_id,
                     email: user.email,
                 },
                 process.env.JWT_KEY!,
@@ -133,7 +132,7 @@ class AuthController {
             );
             const refreshToken = jwt.sign(
                 {
-                    userId: user.id,
+                    userId: user.user_id,
                     email: user.email,
                 },
                 process.env.REFRESH_KEY!,
@@ -141,7 +140,7 @@ class AuthController {
             );
 
             // Store refresh token in database
-            await supabase.from('users').update({ refreshToken: refreshToken }).eq('id', user.id);
+            await supabase.from('users').update({ refresh_token: refreshToken }).eq('user_id', user.user_id);
 
             res.cookie('accessToken', accessToken, {
                 httpOnly: true,
@@ -166,21 +165,21 @@ class AuthController {
 
             const { data: user, error } = await supabase
                 .from('users')
-                .select('id, email, refreshToken')
-                .eq('id', userId)
+                .select('user_id, email, refresh_token')
+                .eq('user_id', userId)
                 .single();
 
             if (error || !user) {
                 return Send.unauthorized(res, null, 'Invalid refresh token');
             }
 
-            if (user.refreshToken !== refreshToken) {
+            if (user.refresh_token !== refreshToken) {
                 return Send.unauthorized(res, null, 'Invalid refresh token');
             }
 
             const newAccessToken = jwt.sign(
                 {
-                    userId: user.id,
+                    userId: user.user_id,
                     email: user.email,
                 },
                 process.env.JWT_KEY!,

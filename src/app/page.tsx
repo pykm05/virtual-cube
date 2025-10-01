@@ -3,25 +3,24 @@
 import type React from 'react';
 
 import { useEffect, useState } from 'react';
-import InstructionsModal from '@/components/instruction';
-import LeaderboardModal from '@/components/leaderboard';
 import { getSocket, Socket } from '@/lib/socket';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import PlayerStats from '@/components/menu/account/PlayerStats';
+import { useAuth } from '@/context/AuthContext';
 
-type user = {
-    loggedIn: boolean;
-    username: string;
+type SolveData = {
+    scramble: string;
+    solve_duration: number;
+    solved_at: string;
 };
 
 export default function PlayHome() {
-    const [userInfo, setUserInfo] = useState<user>({ loggedIn: false, username: 'Guest' });
-    // const [showInstructions, setShowInstructions] = useState(false);
-    // const [showLeaderboard, setShowLeaderboard] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [gameMode, setGameMode] = useState('Unrated');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [solveData, setSolveData] = useState<SolveData[]>([]);
     const [socket, setSocket] = useState<Socket>();
+
+    const { user, logout, loading } = useAuth();
     const router = useRouter();
 
     const handleLogin = () => {
@@ -29,86 +28,47 @@ export default function PlayHome() {
     };
 
     const handleLogout = async () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
+        await logout();
 
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/logout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-            });
-
-            if (!res.ok) {
-                return;
-            }
-        } catch (error) {
-            console.error('Error logging out: ', error);
-            setLoading(false);
-        } finally {
-            router.push('/login');
-        }
-    };
+        router.push('/login');
+    }
 
     useEffect(() => {
-        const init = async () => {
-            if (isSubmitting) return;
-            setIsSubmitting(true);
-            setLoading(true);
+        const socket = getSocket();
+        setSocket(socket);
+    }, []);
 
-            const socket = getSocket();
-            setSocket(socket);
-
+    useEffect(() => {
+        const fetchSolves = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/get-user`, {
+                const userSolvesRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/get-user-solves`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                 });
 
-                let json = await res.json();
+                const userSolveData = await userSolvesRes.json();
 
-                if (!res.ok) {
-                    const refreshRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/refresh-token`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                    });
-
-                    const refreshData = await refreshRes.json();
-
-                    if (!refreshRes.ok) {
-                        console.log(refreshData.message);
-                        return null;
-                    }
-
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/get-user`, {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                    });
-
-                    json = await response.json();
+                if (!userSolveData.ok) {
+                    console.log(userSolveData.message);
+                    return null;
                 }
 
-                setUserInfo({ loggedIn: true, username: json.data.username });
+                setSolveData(userSolveData.data);
             } catch (error) {
-                console.error('Error fetching user:', error);
-            } finally {
-                setIsSubmitting(false);
-                setLoading(false);
+                console.error('Error fetching solves:', error);
             }
         };
 
-        init();
-    }, []);
+        fetchSolves();
+    }, [user?.userId]);
 
     const play = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!socket) return;
 
-        socket.emit('player:initialize', userInfo.username);
+        socket.emit('player:initialize', user);
 
         socket.on('player:initialized', () => {
             socket.emit('room:join_random');
@@ -120,20 +80,6 @@ export default function PlayHome() {
             router.push(`/play/${roomID}`);
             socket.off('room:found');
         });
-    };
-
-    const showPlayerStats = () => {
-        return (
-            <div className="flex flex-col h-full items-center justify-center p-3 gap-3">
-                <div className="flex flex-col items-center justify-center h-5/6">Stats coming soon...</div>
-                <button
-                    onClick={() => handleLogout()}
-                    className="w-full py-2 px-4 rounded-[5px] bg-gray-100 hover:bg-gray-50"
-                >
-                    Logout
-                </button>
-            </div>
-        );
     };
 
     if (loading) {
@@ -151,9 +97,9 @@ export default function PlayHome() {
                 <div className="flex flex-col w-[250px] h-[500px] p-4 gap-3 rounded-[10px] shadow-lg bg-gray-200">
                     <div className="flex items-center gap-[10px] p-3">
                         <Image src="/user.svg" height={30} width={30} priority={true} alt="user icon" />
-                        <div>{userInfo.username}</div>
+                        <div>{user?.username || 'Guest'}</div>
                     </div>
-                    {!userInfo.loggedIn ? (
+                    {!user?.loggedIn ? (
                         <button
                             onClick={() => handleLogin()}
                             className="py-2 px-4 rounded-[5px] bg-gray-100 hover:bg-gray-50"
@@ -162,14 +108,18 @@ export default function PlayHome() {
                         </button>
                     ) : null}
                     <div className="items-center justify-center h-full flex gap-[10px]">
-                        {!userInfo.loggedIn ? <div>Log in to view stats</div> : showPlayerStats()}
+                        {!user?.loggedIn ? (
+                            <div>Log in to view stats</div>
+                        ) : (
+                            <PlayerStats solveData={solveData} handleLogout={handleLogout} />
+                        )}
                     </div>
                 </div>
 
                 {/* Main componenet */}
                 <div className="flex flex-col w-[350px] h-[500px] rounded-[10px] shadow-lg justify-center items-center gap-3 bg-gray-200">
                     <div className="text-white font-bold font-inter text-3xl">Virtual Cube</div>
-                    <div className="text-white font-inter text-s">Welcome, {userInfo.username}!</div>
+                    <div className="text-white font-inter text-s">Welcome, {user?.username}!</div>
                     <br />
                     <button
                         onClick={play}

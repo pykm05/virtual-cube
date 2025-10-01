@@ -2,40 +2,26 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 
 function Register() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
-    const register = async () => {
+    const { register, error } = useAuth();
+
+    const handleRegister = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
-            if (!username || !email || !password) {
-                throw new Error('All fields are required');
-            }
+            await register({ username, email, password });
+            router.push('/');
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password }),
-                credentials: 'include',
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.message);
-            }
-
-            router.push(`../`);
         } catch (error) {
-            setFeedback((error as Error).message || 'An unexpected error occured');
             setIsSubmitting(false);
         }
     };
@@ -75,13 +61,13 @@ function Register() {
                     onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
-                    onClick={() => register()}
+                    onClick={() => handleRegister()}
                     className="py-2 w-[200px] rounded-[5px] mb-2 bg-purple-100 hover:bg-purple-50"
                 >
                     Sign Up
                 </button>
 
-                {feedback && <div className="absolute bottom-10 text-red-500">{feedback}</div>}
+                {error && <div className="absolute bottom-10 text-red-500">{error}</div>}
             </div>
         </div>
     );

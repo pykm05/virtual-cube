@@ -52,10 +52,10 @@ export default function GameModal() {
         // FIXME: This logic does not use PlayerState.DISCONNECTED
         const allPlayersDNF = checkAllPlayersDNF(playerRanks);
         const tied = allPlayersDNF || playerRanks[0].solveTime == playerRanks[1].solveTime;
-        const opponent = socket.id == playerRanks[0].id ? playerRanks[1] : playerRanks[0];
+        const opponent = socket.id == playerRanks[0].socketId ? playerRanks[1] : playerRanks[0];
 
         const oppDNF = opponent.state == PlayerState.DNF;
-        const won = oppDNF || opponent.id == playerRanks[1].id;
+        const won = oppDNF || opponent.socketId == playerRanks[1].socketId;
 
         return (
             <div className="flex flex-col w-[350px] h-[400px] bg-gray-200 rounded-lg text-white">
@@ -133,7 +133,7 @@ export default function GameModal() {
         });
 
         socket.on('game:complete', (rankings: Player[]) => {
-            const p = rankings.find((p) => p.id == socket.id);
+            const p = rankings.find((p) => p.socketId == socket.id);
 
             console.log('game end');
 

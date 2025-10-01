@@ -116,15 +116,20 @@ export default function GameWindow() {
         socket.on('game:start', (users: Player[], scramble: string) => {
             console.log(`Starting game with ${users.length} players: `, ...users);
             for (let user of users) {
-                scrambleBuffer[user.id] = scramble;
+                scrambleBuffer[user.socketId] = scramble;
             }
-            setPlayers(getPlayerOrder(users));
+            const ordered = [
+                ...users.filter((u) => u.socketId !== socket.id), // opponents first
+                ...users.filter((u) => u.socketId === socket.id), // me last
+            ];
+
+            setPlayers(ordered);
         });
     }, []);
 
     useEffect(() => {
         for (let i = 0; i < players.length; i++) {
-            const userID = players[i].id;
+            const userID = players[i].socketId;
             const element = document.getElementById(userID);
             if (element) {
                 newScene(element, userID);
@@ -138,9 +143,9 @@ export default function GameWindow() {
                 (user: Player) =>
                     user && (
                         <div
-                            id={user.id}
-                            key={user.id}
-                            className={`w-full h-full ${user.id !== socket.id ? 'opacity-50' : ''}`}
+                            id={user.socketId}
+                            key={user.socketId}
+                            className={`w-full h-full ${user.socketId !== socket.id ? 'opacity-50' : ''}`}
                         />
                     )
             )}

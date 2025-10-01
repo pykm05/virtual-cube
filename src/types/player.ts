@@ -15,17 +15,19 @@ export enum PlayerState {
 }
 
 export class Player {
-    public id: string;
+    public userId: string; // '' on default unless logged in
+    public loggedIn: boolean;
+    public socketId: string;
     public username: string;
-    public state: PlayerState;
-    public solveTime: number;
-    public moveList: string;
 
-    constructor(id: string, username: string) {
-        this.id = id;
+    public state = PlayerState.NOT_YET_STARTED;
+    public solveTime = 0;
+    public moveList = '';
+
+    constructor(userId: string = '', socketId: string, username: string, loggedIn: boolean) {
+        this.userId = userId;
+        this.loggedIn = loggedIn;
+        this.socketId = socketId;
         this.username = username;
-        this.state = PlayerState.NOT_YET_STARTED;
-        this.solveTime = 0;
-        this.moveList = '';
     }
 }

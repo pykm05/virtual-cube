@@ -1,15 +1,24 @@
 import { Server, Socket } from 'socket.io';
-import Room from '@/server/room.ts';
+import Room from '@/server/game/Room';
 import { Player, PlayerState } from '@/types/player.ts';
 import { RoomState } from '@/types/roomState';
 import { genRanHex } from '@/server/utils';
+import UserSolveService from '../db/UserController';
 
-export default function initializeGameHandlers(io: Server, socket: Socket) {
+const EVENTS = {
+    PLAYER_INITIALIZE: 'player:initialize',
+    ROOM_JOIN_RANDOM: 'room:join_random',
+    ROOM_JOIN_REMATCH: 'room:join_rematch',
+    ROOM_JOINED: 'room:joined',
+    KEYBOARD_INPUT: 'keyboard:input',
+    PLAYER_COMPLETED_SOLVE: 'player:completed_solve',
+    DISCONNECT: 'disconnect',
+};
+
+export default function Game(io: Server, socket: Socket) {
     /*
     Setup event listeners for the socket
     */
-    socket.on('player:initialize', (username: string) => initializePlayer(username));
-    socket.on('room:join_random', () => joinRandomRoom());
     socket.on('room:join_rematch', () => joinRematchRoom());
     socket.on('room:joined', (roomID: string) => roomJoined(roomID));
     socket.on('keyboard:input', (socketID: string, key: string) => handleKeyboardInput(socketID, key));
@@ -20,16 +29,16 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Initialize player and add to global players list if uninitialized
     Update username as needed
     */
-    function initializePlayer(username: string) {
-        const player = deps['players'].find((p) => p.id === socket.id);
-        const newUsername = username === '' ? 'an unnamed cuber' : username;
+    socket.on(EVENTS.PLAYER_INITIALIZE, ({ userId, username, loggedIn }) => {
+        let player = deps['players'].find((p) => p.socketId === socket.id);
 
-        if (player) player.username = newUsername;
-        else {
-            const player = new Player(socket.id, newUsername);
+        if (!player) {
+            if (!loggedIn) username = 'an unnamed cuber';
+
+            player = new Player(userId, socket.id, username, loggedIn);
 
             if (!player) {
-                console.log('Failed to create player');
+                console.log('Failed to create player', { userId, username });
                 io.to(socket.id).emit('join:invalid');
                 return;
             }
@@ -38,17 +47,17 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
 
         socket.emit('player:initialized', socket.id);
-    }
+    });
 
     /*
     Search for a room to join and return its roomID
     Does not add the player to the room yet, that is done in roomJoined function
     */
-    function joinRandomRoom() {
+    socket.on(EVENTS.ROOM_JOIN_RANDOM, () => {
         // FIXME: Do this cleanly
         deps['rooms'] = deps['rooms'].filter((g) => g.getActivePlayers().length != 0);
 
-        const player = deps['players'].find((p) => p.id === socket.id);
+        const player = deps['players'].find((p) => p.socketId === socket.id);
 
         if (!player) {
             console.log('No player found');
@@ -76,7 +85,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
 
         // Push players to room route
         io.to(socket.id).emit('room:found', room.roomID);
-    }
+    });
 
     /*
     Send all players in the room to a new room if all players accept the rematch
@@ -85,8 +94,8 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         // FIXME: Do this cleanly
         deps['rooms'] = deps['rooms'].filter((g) => g.getActivePlayers().length != 0);
 
-        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
-        const player = deps['players'].find((p) => p.id === socket.id);
+        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
+        const player = deps['players'].find((p) => p.socketId === socket.id);
 
         if (!room) {
             console.log(`[WARN] Failed to send players to rematch room: Room not found (player id: ${socket.id})`);
@@ -140,7 +149,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         console.log('-------------------            -------------------');
 
         const room = deps['rooms'].find((r) => r.roomID === roomID);
-        const player = deps['players'].find((p) => p.id === socket.id);
+        const player = deps['players'].find((p) => p.socketId === socket.id);
 
         if (!player) {
             console.log('Player not found');
@@ -155,10 +164,10 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
         }
 
         // if user is already in a room, leave that room first
-        let currentRoom = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
+        let currentRoom = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
 
         if (currentRoom) {
-            currentRoom.playerLeft(player.id);
+            currentRoom.playerLeft(player.socketId);
             socket.leave(currentRoom.roomID);
 
             player.state = PlayerState.NOT_YET_STARTED;
@@ -176,7 +185,7 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     Recieve keyboard input (AS CUBE NOTATION string) from a player and forward it to the room they are in
     */
     function handleKeyboardInput(senderID: string, notationString: string) {
-        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === senderID));
+        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === senderID));
 
         if (!room) {
             console.log('Misdirected input, no room found');
@@ -190,26 +199,40 @@ export default function initializeGameHandlers(io: Server, socket: Socket) {
     /*
     Alert the room that a player has completed their solve
     */
-    function handleSolveComplete(socketID: string) {
-        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
-        if (!room) return;
+    async function handleSolveComplete(socketID: string) {
+        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
+        const player = deps['players'].find((p) => p.socketId === socket.id);
 
-        if (socket.id == socketID) room.playerSolveComplete(socketID);
+        if (!room) {
+            console.log(`[WARN] Failed to send players to rematch room: Room not found (player id: ${socket.id})`);
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }
+
+        if (!player) {
+            console.log(`[WARN] Failed to send player from game ${room.roomID} to rematch room: Player not found`);
+            io.to(socket.id).emit('join:invalid');
+            return;
+        }
+
+        if (socket.id == socketID) await room.playerSolveComplete(socketID);
+
+        await UserSolveService.saveSolve(player, room.scramble);
     }
 
     /*
     Handle player disconnection, mark them as DISCONNECTED in their room
     */
     function disconnectPlayer() {
-        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.id === socket.id));
-        const player = deps['players'].find((p) => p.id === socket.id);
+        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
+        const player = deps['players'].find((p) => p.socketId === socket.id);
 
         if (!player) {
             io.to(socket.id).emit('join:invalid');
             return;
         }
-        if (room) room.playerLeft(player.id);
+        if (room) room.playerLeft(player.socketId);
 
-        console.log(`[INFO] Player ${player.id} has disconnected`);
+        console.log(`[INFO] Player ${player.socketId} has disconnected`);
     }
 }

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 
 /*
-Utility class, ensures all response formats are consistent and well-structured.
+Credit: gigi shalamberidze
 */
 
 class Send {
