@@ -53,8 +53,8 @@ class AuthController {
                     userId: newUser.user_id,
                     email: email,
                 },
-                process.env.JWT_KEY!,
-                { expiresIn: process.env.JWT_EXPIRE as any }
+                process.env.ACCESS_KEY!,
+                { expiresIn: process.env.ACCESS_EXPIRE as any }
             );
             const refreshToken = jwt.sign(
                 {
@@ -127,8 +127,8 @@ class AuthController {
                     userId: user.user_id,
                     email: user.email,
                 },
-                process.env.JWT_KEY!,
-                { expiresIn: process.env.JWT_EXPIRE as any }
+                process.env.ACCESS_KEY!,
+                { expiresIn: process.env.ACCESS_EXPIRE as any }
             );
             const refreshToken = jwt.sign(
                 {
@@ -182,8 +182,8 @@ class AuthController {
                     userId: user.user_id,
                     email: user.email,
                 },
-                process.env.JWT_KEY!,
-                { expiresIn: process.env.JWT_EXPIRE as any }
+                process.env.ACCESS_KEY!,
+                { expiresIn: process.env.ACCESS_EXPIRE as any }
             );
             res.cookie('accessToken', newAccessToken, {
                 httpOnly: true,
