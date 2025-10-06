@@ -22,7 +22,7 @@ export class Player {
 
     public state = PlayerState.NOT_YET_STARTED;
     public solveTime = 0;
-    public moveList = '';
+    public moveHistory = '';
 
     constructor(userId: string = '', socketId: string, username: string, loggedIn: boolean) {
         this.userId = userId;

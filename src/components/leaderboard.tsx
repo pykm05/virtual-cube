@@ -144,7 +144,7 @@ function UserSideModal({ user, entries, onClose }: { user: Leaderboard; entries:
                         <h5 className="text-sm font-semibold text-white uppercase tracking-wide">Solution</h5>
                     </div>
                     <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700/30">
-                        <p className="text-sm text-gray-300 font-mono leading-relaxed">{user.move_list}</p>
+                        <p className="text-sm text-gray-300 font-mono leading-relaxed">{user.move_history}</p>
                     </div>
                 </div>
             </div>

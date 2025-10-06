@@ -73,7 +73,7 @@ class UserController {
         }
     };
 
-    static saveSolve = async (player: Player, scramble: string) => {
+    static saveSolve = async (player: Player, scramble: string, result: string) => {
         try {
             if (!player.loggedIn) return false;
 
@@ -94,7 +94,8 @@ class UserController {
                 user_id: user.user_id,
                 scramble: scramble,
                 solve_duration: player.solveTime,
-                move_list: player.moveList,
+                move_history: player.moveHistory,
+                result: result,
                 solved_at: new Date(Date.now()).toISOString(),
             });
 

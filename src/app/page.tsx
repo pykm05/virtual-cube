@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { getSocket, Socket } from '@/lib/socket';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import PlayerStats from '@/components/menu/account/PlayerStats';
+import PlayerStats from '@/components/menu/PlayerStats';
 import { useAuth } from '@/context/AuthContext';
 
 type SolveData = {
@@ -28,10 +28,11 @@ export default function PlayHome() {
     };
 
     const handleLogout = async () => {
-        await logout();
-
+        // Push before logging out
         router.push('/login');
-    }
+
+        await logout();
+    };
 
     useEffect(() => {
         const socket = getSocket();
@@ -91,14 +92,17 @@ export default function PlayHome() {
     }
 
     return (
-        <div className="flex items-center justify-center min-w-[850px] h-full bg-gray-100 text-white">
+        <div className="flex items-center justify-center min-w-[850px] h-full bg-gray-100 text-white gap-3">
             <div className="flex justify-center gap-3">
                 {/* Account information */}
-                <div className="flex flex-col w-[250px] h-[500px] p-4 gap-3 rounded-[10px] shadow-lg bg-gray-200">
+                <div className="flex flex-col w-[250px] h-[500px] p-4 gap-1 rounded-[10px] shadow-lg bg-gray-200">
                     <div className="flex items-center gap-[10px] p-3">
                         <Image src="/user.svg" height={30} width={30} priority={true} alt="user icon" />
                         <div>{user?.username || 'Guest'}</div>
                     </div>
+
+                    <div className="border-t-1 mb-3" />
+
                     {!user?.loggedIn ? (
                         <button
                             onClick={() => handleLogin()}

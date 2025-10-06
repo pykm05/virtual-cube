@@ -83,7 +83,7 @@ export default function GameWindow() {
                 cube.handleInput(move);
 
                 console.log(`Sending move: ${move}`);
-              
+
                 socket.emit('keyboard:input', socket.id, move);
 
                 if (await cube.isSolved()) {
@@ -93,8 +93,7 @@ export default function GameWindow() {
             });
         }
 
-socket.on('keyboard:input', async (socketID: string, key: string) => {
-
+        socket.on('keyboard:input', async (socketID: string, key: string) => {
             if (socketID == socket.id || socketID != assignedSocketID) {
                 // Local player moves are handled in the keydown callback
                 return;

@@ -37,9 +37,9 @@ const AuthContext = createContext<AuthContextType>({
     },
     loading: true,
     error: '',
-    register: async () => { },
-    login: async () => { },
-    logout: async () => { },
+    register: async () => {},
+    login: async () => {},
+    logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -70,14 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     username: data.data.username,
                 });
                 setError(null);
-
             } else {
                 await refreshToken();
             }
-
         } catch (error) {
             console.error(error);
-
         } finally {
             setLoading(false);
         }
@@ -96,11 +93,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (res.ok) {
                 await fetchUser();
                 setError(null);
-
             } else {
                 throw new Error(data.message);
             }
-
         } catch (error) {
             console.error(error);
         }
@@ -124,7 +119,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (res.ok) {
             await fetchUser();
             setError(null);
-
         } else {
             setError(data.message);
             throw new Error(data.message);
@@ -149,7 +143,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (res.ok) {
             await fetchUser();
             setError(null);
-
         } else {
             setError(data.message);
             throw new Error(data.message);
@@ -172,7 +165,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 username: 'Guest',
             });
             setError(null);
-
         } else {
             setError(data.message);
             throw new Error(data.message);

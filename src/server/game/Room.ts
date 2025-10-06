@@ -4,6 +4,7 @@ import { RoomState } from '@/types/roomState';
 import { generate3x3Scramble } from '../utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
 import { supabase } from '../db/db';
+import UserController from '../db/UserController';
 
 export default class Room {
     public roomID: string;
@@ -14,8 +15,8 @@ export default class Room {
     private players: Player[] = [];
 
     // NOTE: 20 moves scrambles are linked to db structure, mind that if you ever change this
-    public scramble: string = generate3x3Scramble(20);
-    // public scramble: string = 'U';
+    // public scramble: string = generate3x3Scramble(20);
+    public scramble: string = 'U';
 
     private maxPlayerCount = 2;
 
@@ -104,7 +105,6 @@ export default class Room {
     }
 
     public handleInput(socketID: string, notationString: string) {
-      
         for (const player of this.players) {
             if (player.socketId == socketID) continue;
             this.io.to(player.socketId).emit('keyboard:input', socketID, notationString);
@@ -127,7 +127,7 @@ export default class Room {
             return;
         }
 
-        player.moveList += ' ' + notationString;
+        player.moveHistory += ' ' + notationString;
 
         if (player.state != PlayerState.INSPECTION || isCubeRotation(notation)) {
             return;
@@ -312,7 +312,7 @@ export default class Room {
 
     // All player have finished their solve, ran out of time or left
     // Write solves to db, cleanup the room, prepare rematch
-    private gameEnd() {
+    private async gameEnd() {
         const ALLOWED_STATES = [PlayerState.SOLVED, PlayerState.DNF, PlayerState.DISCONNECTED];
         if (this.players.some((p) => !ALLOWED_STATES.includes(p.state))) {
             console.log(`[WARN] Called room.gameEnd but some player is still playing`);
@@ -354,13 +354,13 @@ export default class Room {
 
         const currentDate = new Date(Date.now()).toISOString();
 
-        const upload = async (username: string, solveDuration: number, moveList: string) => {
+        const upload = async (username: string, solveDuration: number, moveHistory: string) => {
             let { error } = await supabase.from('leaderboard').insert({
                 username: username,
                 solve_duration: solveDuration,
                 solved_at: currentDate,
                 scramble: this.scramble,
-                move_list: moveList,
+                move_history: moveHistory,
             });
 
             if (error) {
@@ -368,10 +368,25 @@ export default class Room {
             }
         };
 
+        const bestTime = this.rankings[0].solveTime;
+        const winners = this.rankings.filter((p) => p.solveTime === bestTime);
+
         for (const player of this.players) {
             if (player.state != PlayerState.SOLVED) continue;
 
-            upload(player.username, player.solveTime, player.moveList);
+            let result: 'WIN' | 'DRAW' | 'LOSS';
+
+            if (winners.length > 1 && winners.some((w) => w.socketId === player.socketId)) {
+                result = 'DRAW';
+            } else if (winners.length === 1 && winners[0].socketId === player.socketId) {
+                result = 'WIN';
+            } else {
+                result = 'LOSS';
+            }
+
+            await UserController.saveSolve(player, this.scramble, result);
+
+            // upload(player.username, player.solveTime, player.moveHistory);
         }
     }
 }

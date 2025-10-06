@@ -19,7 +19,6 @@ function Login() {
         try {
             await login({ email, password });
             router.push('/');
-
         } catch (error) {
             setIsSubmitting(false);
         }

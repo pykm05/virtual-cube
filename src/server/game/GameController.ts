@@ -3,7 +3,6 @@ import Room from '@/server/game/Room';
 import { Player, PlayerState } from '@/types/player.ts';
 import { RoomState } from '@/types/roomState';
 import { genRanHex } from '@/server/utils';
-import UserSolveService from '../db/UserController';
 
 const EVENTS = {
     PLAYER_INITIALIZE: 'player:initialize',
@@ -172,7 +171,7 @@ export default function Game(io: Server, socket: Socket) {
 
             player.state = PlayerState.NOT_YET_STARTED;
             player.solveTime = 0;
-            player.moveList = '';
+            player.moveHistory = '';
         }
 
         socket.join(room.roomID);
@@ -216,8 +215,6 @@ export default function Game(io: Server, socket: Socket) {
         }
 
         if (socket.id == socketID) await room.playerSolveComplete(socketID);
-
-        await UserSolveService.saveSolve(player, room.scramble);
     }
 
     /*

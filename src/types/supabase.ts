@@ -34,7 +34,7 @@ export type Database = {
                     id: number;
                     solve_duration: number;
                     scramble: string;
-                    move_list: string;
+                    move_history: string;
                     username: string;
                 };
                 Insert: {
@@ -57,14 +57,16 @@ export type Database = {
                     user_id: string;
                     solve_duration: number;
                     scramble: string;
-                    move_list: string;
+                    move_history: string;
+                    result: string;
                     solved_at: string;
                 };
                 Insert: {
                     user_id: string;
                     solve_duration: number;
                     scramble: string;
-                    move_list: string;
+                    move_history: string;
+                    result: string;
                     solved_at: string;
                 };
                 Update: {
@@ -72,7 +74,8 @@ export type Database = {
                     user_id?: string;
                     solve_duration?: number;
                     scramble?: string;
-                    move_list?: string;
+                    move_history?: string;
+                    result: string;
                     solved_at?: string;
                 };
                 Relationships: [
@@ -80,44 +83,6 @@ export type Database = {
                         foreignKeyName: 'user_solves_user_id_fkey';
                         columns: ['user_id'];
                         isOneToOne: false;
-                        referencedRelation: 'users';
-                        referencedColumns: ['id'];
-                    },
-                ];
-            };
-            user_metrics: {
-                Row: {
-                    id: string;
-                    total_solves: number;
-                    fastest_solve_time: number;
-                    wins: number;
-                    losses: number;
-                    fastest_solve_scramble: string;
-                    fastest_solve_move_history: string;
-                };
-                Insert: {
-                    id: string;
-                    total_solves: number;
-                    fastest_solve_time: number;
-                    wins: number;
-                    losses: number;
-                    fastest_solve_scramble: string;
-                    fastest_solve_move_history: string;
-                };
-                Update: {
-                    id?: string;
-                    total_solves?: number;
-                    fastest_solve_time?: number;
-                    wins?: number;
-                    losses?: number;
-                    fastest_solve_scramble?: string;
-                    fastest_solve_move_history?: string;
-                };
-                Relationships: [
-                    {
-                        foreignKeyName: 'user_metrics_id_fkey';
-                        columns: ['id'];
-                        isOneToOne: true;
                         referencedRelation: 'users';
                         referencedColumns: ['id'];
                     },
