@@ -16,7 +16,7 @@ const port = 4000;
 
 app.use(
     cors({
-        origin: 'http://localhost:3000',
+        origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
         credentials: true,
     })
 );
@@ -56,7 +56,6 @@ app.post('/api/logout', AuthMiddleware.authenticateUser, AuthController.logout);
 app.post('/api/refresh-token', AuthMiddleware.refreshTokenValidation, AuthController.refreshToken);
 
 app.get('/api/get-user', AuthMiddleware.authenticateUser, UserController.getUser);
-// app.post('/api/get-user-metrics', AuthMiddleware.authenticateUser, UserController.getUserMetrics);
 app.get('/api/get-user-solves', AuthMiddleware.authenticateUser, UserController.getUserSolves);
 
 const server = http.createServer(app);
