@@ -104,12 +104,12 @@ class AuthController {
 
     static login = async (req: Request, res: Response) => {
         try {
-            const { email, password } = req.body;
+            const { usernameOrEmail, password } = req.body;
 
             const { data: user, error } = await supabase
                 .from('users')
                 .select('user_id, email, pwd')
-                .eq('email', email)
+                .or(`email.eq.${usernameOrEmail}, username.eq.${usernameOrEmail}`)
                 .single();
 
             if (error || !user) {

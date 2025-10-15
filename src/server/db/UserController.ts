@@ -56,7 +56,7 @@ class UserController {
                 .from('user_solves')
                 .select('scramble, solve_duration, solved_at')
                 .eq('user_id', userId)
-                .order('solved_at', { ascending: false });
+                .order('solved_at', { ascending: true });
 
             if (error) {
                 return Send.error(res, null);

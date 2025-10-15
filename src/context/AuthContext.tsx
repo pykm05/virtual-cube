@@ -16,7 +16,7 @@ type RegisterCredentials = {
 };
 
 type LoginCredentials = {
-    email: string;
+    usernameOrEmail: string;
     password: string;
 };
 
@@ -25,7 +25,7 @@ type AuthContextType = {
     loading: boolean;
     error: string | null;
     register: ({ username, email, password }: RegisterCredentials) => Promise<void>;
-    login: ({ email, password }: LoginCredentials) => Promise<void>;
+    login: ({ usernameOrEmail, password }: LoginCredentials) => Promise<void>;
     logout: () => Promise<void>;
 };
 
@@ -70,11 +70,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     username: data.data.username,
                 });
                 setError(null);
+
             } else {
                 await refreshToken();
             }
+            
         } catch (error) {
             console.error(error);
+            
         } finally {
             setLoading(false);
         }
@@ -125,8 +128,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
-    const login = async ({ email, password }: LoginCredentials) => {
-        if (!email || !password) {
+    const login = async ({ usernameOrEmail, password }: LoginCredentials) => {
+        if (!usernameOrEmail || !password) {
             setError('All fields required');
             throw new Error('All fields required');
         }
@@ -134,7 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ usernameOrEmail, password }),
             credentials: 'include',
         });
 
