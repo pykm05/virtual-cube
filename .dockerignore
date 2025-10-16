@@ -1,6 +1,3 @@
-/.git
-/node_modules
 .dockerignore
-.env
-Dockerfile
-fly.toml
+.next
+.node_modules
