@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import Room from '@/server/game/Room';
-import { Player, PlayerState } from '@/types/player.ts';
-import { RoomState } from '@/types/roomState';
+import { Player, PlayerState } from '@/types/player';
+import { RoomState } from '@/types/RoomState';
 import { genRanHex } from '@/server/utils';
 
 const EVENTS = {

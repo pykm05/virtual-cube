@@ -14,12 +14,21 @@ import Send from './auth/Send.ts';
 const app = express();
 const port = 4000;
 
+const BASE_URL = "http://localhost:3000";
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? (process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+        : [])
+    : ["http://localhost:3000", "http://backend:3000"];
+
 app.use(
     cors({
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+        origin: allowedOrigins,
         credentials: true,
     })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
