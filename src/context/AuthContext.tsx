@@ -70,14 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     username: data.data.username,
                 });
                 setError(null);
-
             } else {
                 await refreshToken();
             }
-            
         } catch (error) {
             console.error(error);
-            
         } finally {
             setLoading(false);
         }

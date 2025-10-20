@@ -4,10 +4,11 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "next": "next dev",
-        "dev": "tsx src/server/main.ts",
+        "next": "next start",
+        "dev": "next dev",
+        "frontend": "next start",
+        "backend": "tsx src/server/main.ts",
         "build": "next build",
-        "start": "next start",
         "lint": "next lint"
     },
     "dependencies": {
@@ -40,6 +41,7 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/three": "^0.177.0",
+        "concurrently": "^9.2.1",
         "eslint": "^9",
         "eslint-config-next": "15.3.3",
         "nodemon": "^3.1.10",

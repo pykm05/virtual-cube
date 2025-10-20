@@ -6,10 +6,14 @@ WORKDIR /app
 
 # Copy and install dependencies
 COPY package*.json ./
+
 RUN npm install
 
 # Copy all files
 COPY . .
 
+# Build project
+RUN npm run build
+
 # Start frontend
-CMD ["npm", "run", "next"]
+CMD ["npm", "run", "frontend"]

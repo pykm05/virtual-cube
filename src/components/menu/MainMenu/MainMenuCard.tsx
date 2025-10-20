@@ -9,12 +9,7 @@ type MainMenuCardProps = {
     onTutorial?: () => void;
 };
 
-export default function MainMenuCard({
-    username = 'Guest',
-    onPlay,
-    onLeaderboard,
-    onTutorial,
-}: MainMenuCardProps) {
+export default function MainMenuCard({ username = 'Guest', onPlay, onLeaderboard, onTutorial }: MainMenuCardProps) {
     return (
         <div className="flex flex-col w-[350px] h-[500px] rounded-2xl shadow-lg justify-center items-center gap-4 bg-gray-200">
             <div className="text-white font-bold text-3xl font-inter">Virtual Cube</div>

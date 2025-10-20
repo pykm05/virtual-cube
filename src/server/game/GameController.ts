@@ -163,7 +163,7 @@ export default function Game(io: Server, socket: Socket) {
         }
 
         // if user is already in a room, leave that room first
-        let currentRoom = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
+        const currentRoom = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
 
         if (currentRoom) {
             currentRoom.playerLeft(player.socketId);
@@ -184,7 +184,7 @@ export default function Game(io: Server, socket: Socket) {
     Recieve keyboard input (AS CUBE NOTATION string) from a player and forward it to the room they are in
     */
     function handleKeyboardInput(senderID: string, notationString: string) {
-        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === senderID));
+        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === senderID));
 
         if (!room) {
             console.log('Misdirected input, no room found');
@@ -221,7 +221,7 @@ export default function Game(io: Server, socket: Socket) {
     Handle player disconnection, mark them as DISCONNECTED in their room
     */
     function disconnectPlayer() {
-        let room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
+        const room = deps['rooms'].find((r) => r.getActivePlayers().some((p) => p.socketId === socket.id));
         const player = deps['players'].find((p) => p.socketId === socket.id);
 
         if (!player) {

@@ -160,7 +160,7 @@ export default function GameModal() {
 
             setRematchInfo(roomInfo);
         });
-    }, []);
+    }, [router]);
 
     return gameComplete || cubeSolved ? (
         <div className="z-100 fixed inset-0 bg-black/50 w-full h-full p-3 flex justify-center items-center">

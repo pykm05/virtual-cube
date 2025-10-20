@@ -33,7 +33,7 @@ export default function PlayerWindow() {
         socket.on('join:invalid', () => {
             router.push('../../');
         });
-    }, []);
+    }, [router]);
 
     return (
         <div className="relative w-screen h-screen">

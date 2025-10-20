@@ -14,13 +14,14 @@ import Send from './auth/Send.ts';
 const app = express();
 const port = 4000;
 
-const BASE_URL = "http://localhost:3000";
-
-const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS
-        ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
-        : [])
-    : ["http://localhost:3000", "http://backend:3000"];
+const allowedOrigins =
+    process.env.NODE_ENV === 'production'
+        ? process.env.ALLOWED_ORIGINS
+            ? process.env.ALLOWED_ORIGINS.split(',')
+                  .map((o) => o.trim())
+                  .filter(Boolean)
+            : []
+        : ['http://localhost:3000', 'http://backend:3000'];
 
 app.use(
     cors({
@@ -43,7 +44,7 @@ app.get('/api/leaderboard/:limit', AuthMiddleware.authenticateUser, async (req, 
         res.status(400).json({ error: 'Malformed request' });
     }
 
-    let { data, error } = await supabase
+    const { data, error } = await supabase
         .from('leaderboard')
         .select()
         .order('solve_duration', { ascending: true })
