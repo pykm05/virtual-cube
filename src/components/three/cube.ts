@@ -541,7 +541,11 @@ class Cube {
     private render() {
         this.updateCubeStatus();
         if (this.cubeStatus == CubeState.MOVE_IN_PROGRESS) {
-            this.action == CubeAction.turn ? this.doTurn() : this.doRotation();
+            if (this.action == CubeAction.turn) {
+                this.doTurn();
+            } else {
+                this.doRotation();
+            }
         }
 
         this.renderer.render(this.scene, this.camera);

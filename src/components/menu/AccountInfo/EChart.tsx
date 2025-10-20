@@ -46,7 +46,5 @@ export default function EChart({ solveData }: { solveData: any[] }) {
         ],
     };
 
-    return (
-        <ReactECharts option={options} style={{ height: '100%', width: '100%' }} />
-    );
+    return <ReactECharts option={options} style={{ height: '100%', width: '100%' }} />;
 }

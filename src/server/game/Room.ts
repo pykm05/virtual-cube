@@ -3,7 +3,6 @@ import { Player, PlayerState } from '@/types/player';
 import { RoomState } from '@/types/RoomState';
 import { generate3x3Scramble } from '../utils';
 import { isCubeRotation, notationFromString } from '@/types/cubeTypes';
-import { supabase } from '../db/db';
 import UserController from '../db/UserController';
 
 export default class Room {
@@ -15,8 +14,8 @@ export default class Room {
     private players: Player[] = [];
 
     // NOTE: 20 moves scrambles are linked to db structure, mind that if you ever change this
-    // public scramble: string = generate3x3Scramble(20);
-    public scramble: string = 'U';
+    public scramble: string = generate3x3Scramble(20);
+    // public scramble: string = 'U';
 
     private maxPlayerCount = 2;
 
@@ -110,7 +109,7 @@ export default class Room {
             this.io.to(player.socketId).emit('keyboard:input', socketID, notationString);
         }
 
-        let player = this.players.find((p) => p.socketId == socketID);
+        const player = this.players.find((p) => p.socketId == socketID);
 
         // If the player is not here, there is no point sending the event to the ws room
         if (!player) {
@@ -352,21 +351,21 @@ export default class Room {
         console.log(`[INFO] Game ${this.roomID} has ended`);
         console.log(this.rankings);
 
-        const currentDate = new Date(Date.now()).toISOString();
+        // const currentDate = new Date(Date.now()).toISOString();
 
-        const upload = async (username: string, solveDuration: number, moveHistory: string) => {
-            let { error } = await supabase.from('leaderboard').insert({
-                username: username,
-                solve_duration: solveDuration,
-                solved_at: currentDate,
-                scramble: this.scramble,
-                move_history: moveHistory,
-            });
+        // const upload = async (username: string, solveDuration: number, moveHistory: string) => {
+        //     let { error } = await supabase.from('leaderboard').insert({
+        //         username: username,
+        //         solve_duration: solveDuration,
+        //         solved_at: currentDate,
+        //         scramble: this.scramble,
+        //         move_history: moveHistory,
+        //     });
 
-            if (error) {
-                console.log(`[ERROR] Failed to upload to DB due to ${JSON.stringify(error)}`);
-            }
-        };
+        //     if (error) {
+        //         console.log(`[ERROR] Failed to upload to DB due to ${JSON.stringify(error)}`);
+        //     }
+        // };
 
         const bestTime = this.rankings[0].solveTime;
         const winners = this.rankings.filter((p) => p.solveTime === bestTime);

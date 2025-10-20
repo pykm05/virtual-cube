@@ -13,7 +13,7 @@ class AuthController {
         try {
             const { username, email, password } = req.body;
 
-            let { data: existingUser, error: searchError } = await supabase
+            const { data: existingUser, error: searchError } = await supabase
                 .from('users')
                 .select('user_id, username, email')
                 .or(`email.eq.${email},username.eq.${username}`);

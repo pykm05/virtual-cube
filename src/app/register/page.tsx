@@ -20,7 +20,7 @@ function Register() {
         try {
             await register({ username, email, password });
             router.push('/');
-        } catch (error) {
+        } catch {
             setIsSubmitting(false);
         }
     };

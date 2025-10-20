@@ -24,7 +24,7 @@ const getAverage = (solveData: SolveData[], numSolves: number, i: number): numbe
     const min = Math.min(...durations);
     const max = Math.max(...durations);
 
-    let filtered: number[] = [];
+    const filtered: number[] = [];
     let minRemoved = false;
     let maxRemoved = false;
 
@@ -44,12 +44,7 @@ const getAverage = (solveData: SolveData[], numSolves: number, i: number): numbe
     return Math.round(avg * 100) / 100;
 };
 
-export default function AccountInfoCard({
-    user,
-    solveData,
-    handleLogout,
-    handleLogin,
-}: PlayerStatsProps) {
+export default function AccountInfoCard({ user, solveData, handleLogout, handleLogin }: PlayerStatsProps) {
     const tableData = useMemo(() => {
         return solveData.map((solve, i) => ({
             originalIndex: i,
@@ -91,10 +86,7 @@ export default function AccountInfoCard({
             <div className="border-t mb-3" />
 
             {!user?.loggedIn ? (
-                <button
-                    onClick={handleLogin}
-                    className="py-2 px-4 rounded bg-gray-100 hover:bg-gray-50"
-                >
+                <button onClick={handleLogin} className="py-2 px-4 rounded bg-gray-100 hover:bg-gray-50">
                     Login / Signup
                 </button>
             ) : null}
@@ -108,7 +100,9 @@ export default function AccountInfoCard({
                             <div className="flex-1 text-center">
                                 <span className="font-semibold">Best Single:</span>
                                 <div className={`${bestIndices.single !== null ? 'text-blue-100' : ''} font-semibold`}>
-                                    {bestIndices.single !== null ? tableData[bestIndices.single].solve.solve_duration.toFixed(2) : 'NA'}
+                                    {bestIndices.single !== null
+                                        ? tableData[bestIndices.single].solve.solve_duration.toFixed(2)
+                                        : 'NA'}
                                 </div>
                             </div>
                             <div className="flex-1 text-center">
@@ -137,26 +131,34 @@ export default function AccountInfoCard({
                                 </thead>
                                 <tbody>
                                     {tableData.length > 0 ? (
-                                        tableData.toReversed().map(({ originalIndex, solve, ao5, ao12 }, displayIdx) => {
-                                            const idx = tableData.length - 1 - displayIdx;
-                                            return (
-                                                <tr
-                                                    key={originalIndex}
-                                                    className="odd:bg-gray-200 even:bg-gray-100 overflow-hidden"
-                                                >
-                                                    <td className="px-1 py-1">{originalIndex + 1}</td>
-                                                    <td className={`px-1 py-1 ${bestIndices.single === idx ? 'text-blue-100 font-semibold' : ''}`}>
-                                                        {solve.solve_duration.toFixed(2)}
-                                                    </td>
-                                                    <td className={`px-1 py-1 ${bestIndices.ao5 === idx ? 'text-yellow-100 font-semibold' : ''}`}>
-                                                        {ao5 !== null ? ao5.toFixed(2) : 'NA'}
-                                                    </td>
-                                                    <td className={`px-1 py-1 ${bestIndices.ao12 === idx ? 'text-green-100 font-semibold' : ''}`}>
-                                                        {ao12 !== null ? ao12.toFixed(2) : 'NA'}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
+                                        tableData
+                                            .toReversed()
+                                            .map(({ originalIndex, solve, ao5, ao12 }, displayIdx) => {
+                                                const idx = tableData.length - 1 - displayIdx;
+                                                return (
+                                                    <tr
+                                                        key={originalIndex}
+                                                        className="odd:bg-gray-200 even:bg-gray-100 overflow-hidden"
+                                                    >
+                                                        <td className="px-1 py-1">{originalIndex + 1}</td>
+                                                        <td
+                                                            className={`px-1 py-1 ${bestIndices.single === idx ? 'text-blue-100 font-semibold' : ''}`}
+                                                        >
+                                                            {solve.solve_duration.toFixed(2)}
+                                                        </td>
+                                                        <td
+                                                            className={`px-1 py-1 ${bestIndices.ao5 === idx ? 'text-yellow-100 font-semibold' : ''}`}
+                                                        >
+                                                            {ao5 !== null ? ao5.toFixed(2) : 'NA'}
+                                                        </td>
+                                                        <td
+                                                            className={`px-1 py-1 ${bestIndices.ao12 === idx ? 'text-green-100 font-semibold' : ''}`}
+                                                        >
+                                                            {ao12 !== null ? ao12.toFixed(2) : 'NA'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                     ) : (
                                         <tr>
                                             <td colSpan={4} className="h-[75px]">

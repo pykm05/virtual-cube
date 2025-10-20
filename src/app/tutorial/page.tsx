@@ -58,12 +58,11 @@ const steps: TutorialStep[] = [
     {
         title: 'Your Goal',
         description:
-            'The goal is to restore the cube to its solved state—each side showing one solid color. You\'ll have 15 seconds to inspect the cube before the timer automatically starts.',
+            "The goal is to restore the cube to its solved state—each side showing one solid color. You'll have 15 seconds to inspect the cube before the timer automatically starts.",
     },
     {
         title: 'You’re Ready!',
-        description:
-            'Great job! You’ve completed the tutorial. You can now join matches and compete with others!',
+        description: 'Great job! You’ve completed the tutorial. You can now join matches and compete with others!',
     },
 ];
 
@@ -116,21 +115,13 @@ export default function TutorialPage() {
                 {/* Sidebar */}
                 <aside className="w-96 bg-gray-100 border-l-2 border-gray-50 p-8 flex flex-col justify-between">
                     {!ready ? (
-                        <div className="flex items-center justify-center h-full text-gray-400">
-                            Loading tutorial...
-                        </div>
+                        <div className="flex items-center justify-center h-full text-gray-400">Loading tutorial...</div>
                     ) : (
                         <>
                             <div>
-                                <h1 className="text-3xl font-bold mb-4">
-                                    Tutorial
-                                </h1>
-                                <h2 className="text-xl font-semibold">
-                                    {step.title}
-                                </h2>
-                                <p className="text-sm text-gray-300 mt-3 leading-relaxed">
-                                    {step.description}
-                                </p>
+                                <h1 className="text-3xl font-bold mb-4">Tutorial</h1>
+                                <h2 className="text-xl font-semibold">{step.title}</h2>
+                                <p className="text-sm text-gray-300 mt-3 leading-relaxed">{step.description}</p>
                             </div>
 
                             {/* Navigation */}

@@ -19,8 +19,7 @@ function Login() {
         try {
             await login({ usernameOrEmail, password });
             router.push('/');
-
-        } catch (error) {
+        } catch {
             setIsSubmitting(false);
         }
     };
@@ -53,10 +52,7 @@ function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
-                <button
-                    onClick={handleLogin}
-                    className="py-2 w-[200px] rounded mb-2 bg-purple-100 hover:bg-purple-50"
-                >
+                <button onClick={handleLogin} className="py-2 w-[200px] rounded mb-2 bg-purple-100 hover:bg-purple-50">
                     Sign In
                 </button>
                 <button

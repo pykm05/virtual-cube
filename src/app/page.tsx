@@ -36,11 +36,11 @@ export default function PlayHome() {
 
     const handleTutorial = () => {
         router.push('/tutorial');
-    }
+    };
 
     const handleLeaderboard = () => {
         router.push('/leaderboard');
-    }
+    };
 
     useEffect(() => {
         const socket = getSocket();
@@ -64,14 +64,12 @@ export default function PlayHome() {
                 }
 
                 setSolveData(userSolveData.data);
-
             } catch (error) {
                 console.error('Error fetching solves:', error);
             }
         };
         fetchSolves();
-
-    }, [user?.userId]);
+    }, [user]);
 
     const play = (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,8 +101,18 @@ export default function PlayHome() {
     return (
         <div className="flex items-center justify-center min-w-[850px] h-full bg-gray-100 text-white gap-3">
             <div className="flex justify-center gap-3 p-3">
-                <AccountInfoCard user={user} solveData={solveData} handleLogin={handleLogin} handleLogout={handleLogout}/>
-                <MainMenuCard username={user.username} onPlay={play} onLeaderboard={handleLeaderboard} onTutorial={handleTutorial}/>
+                <AccountInfoCard
+                    user={user}
+                    solveData={solveData}
+                    handleLogin={handleLogin}
+                    handleLogout={handleLogout}
+                />
+                <MainMenuCard
+                    username={user.username}
+                    onPlay={play}
+                    onLeaderboard={handleLeaderboard}
+                    onTutorial={handleTutorial}
+                />
                 <GameModeCard gameMode={gameMode} setGameMode={setGameMode} />
             </div>
         </div>

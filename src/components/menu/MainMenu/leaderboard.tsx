@@ -67,7 +67,7 @@ async function getLeaderboard(): Promise<Leaderboard[] | null> {
         const lb: Leaderboard[] = data.data;
         return lb;
     } catch (error) {
-        console.error('Error fetching leaderboard: ${error}');
+        console.error(`Error fetching leaderboard: ${error}`);
         return null;
     }
 }
