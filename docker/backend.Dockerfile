@@ -7,10 +7,13 @@ WORKDIR /app
 # Copy and install dependencies
 COPY package*.json ./
 
+# Install project dependencies
 RUN npm install
 
 # Copy all files
 COPY . .
 
-# Start backend
+EXPOSE 4000
+
+# Start frontend
 CMD ["npm", "run", "backend"]
