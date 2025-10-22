@@ -1,13 +1,14 @@
-networks:
-  app-network:
-    driver: bridge
 services:
   frontend:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     working_dir: /app
     command: npm run frontend
     depends_on:
@@ -18,14 +19,7 @@ services:
       dockerfile: docker/backend.Dockerfile
     ports:
       - "4000:4000"
+    env_file:
+      - .env
     working_dir: /app
     command: npm run backend
-  nginx:
-    image: nginx:1.29
-    container_name: nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    ports:
-      - "80:80"
-    networks:
-      - app-network
