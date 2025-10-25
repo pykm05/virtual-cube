@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Player } from '@/types/player';
 
-const URL = 'http://localhost:4000';
+const URL = process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_BASE_URL : 'http://localhost:4000';
 
 let socket: Socket;
 
