@@ -59,7 +59,6 @@ export default function PlayHome() {
                 const userSolveData = await userSolvesRes.json();
 
                 if (!userSolveData.ok) {
-                    console.log(userSolveData.message);
                     return null;
                 }
 

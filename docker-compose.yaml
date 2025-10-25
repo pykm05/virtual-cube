@@ -6,7 +6,9 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     ports:
+      - "80:3000"
       - "3000:3000"
+      - "443:3000"
     env_file:
       - .env
     working_dir: /app
@@ -19,6 +21,7 @@ services:
       dockerfile: docker/backend.Dockerfile
     ports:
       - "4000:4000"
+      - "4001:4000"
     env_file:
       - .env
     working_dir: /app
